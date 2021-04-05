@@ -29,7 +29,7 @@
 
 # Initialize variables and language setting for compat
 LANG=C
-version="1.2.7"
+version="1.2.10"
 error_count=0
 crit_count=0
 crit_add=0
@@ -40,20 +40,25 @@ alias check_iface_exist=check_iface_exists
 
 # Define functions
 _Version(){
+    
         echo "x86routertools v$version"
+        
 }
 
 POSIX_Version(){
+    
         echo "Copyright (C) 2021 Yago Mont' Alverne"
-        _Version; exit 0
+        _Version
+
 }
 
 # Descriptive help function
 _Help(){
+    
         echo "Usage: x86routertools [ACTION] (OPTIONS)"
         echo
         echo "Actions ->"
-	echo "  edit [AP]		  edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
+	    echo "  edit [AP]		  edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
         echo "  status-internet, inet     checks if internet access is present and exits"
         echo "  status-wifi, wifi {AP}    checks if the wifi AP(s) is/are up and running and exits"
         echo "  status-services, srv      checks if important services are running and exits"
@@ -69,7 +74,7 @@ _Help(){
         echo "* display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution, requires the MAC address" 
         echo "* display-airtime [AP] [MAC] displays airtime usage for a given device, requires MAC address, 100ms resolution"
         echo "* display-ani [AP]           displays runtime info about Adaptive Noise Immunity, 100ms resolution"
-        echo "  display-local-network      displays all connected devices to this machine, 1s resolution"
+        echo "  display-local-network      displays all connected devices to this machine (ARP), 1s resolution"
         echo "  display-qdisc [interface]  displays queue discipline statistics for the given interface, 100ms resolution"
         echo "  show-local-network, ls     show all connected devices to this machine, once"
         echo
@@ -113,45 +118,54 @@ _Help(){
         echo " -V, --verbose              operate verbosely"
         echo " -F, --nofail               keep going even if a critical error happens"
         echo " -C, --noclear              never clear the screen"
+        echo " -Z                         disown all jobs on exit"
 }
 
 # Short help function
 Invalid_Help(){
+    
         if [[ $count_arg -eq 1 ]]; then
-        _Help
-        echo
-        echo "x86routertools: Invalid command line option $cmd_arg"
-        elif [[ $count_arg -gt 1 ]]; then
-        echo "x86routertools: Invalid command line option $cmd_arg"
-        echo "Run 'x86routertools -h' for help."
+            _Help
+            echo
+            echo "x86routertools: Invalid command line option $cmd_arg"
+                elif [[ $count_arg -gt 1 ]]; then
+                    echo "x86routertools: Invalid command line option $cmd_arg"
+                    echo "Run 'x86routertools -h' for help."
         fi
+        
         exit 1
+        
 }
 
 trap_ctl(){
-  # Clean up our junk and quit if the user does CTRL+C
-        cleanup
-}
-
-cleanup(){
-        rm /dev/shm/routertools.netrec.inet 2>/dev/null
-        rm /dev/shm/routertools.netrec.dns 2>/dev/null
-        if [[ $quiet != 1 ]]; then
-        _exit "x86routertools was terminated by the user."
-        fi
+    # Clean up our junk and quit if the user does CTRL+C
+    cleanup
 }
 
 # Initialize trap
 trap 'trap_ctl' SIGINT
 
-error(){
-# Functions that can error should give their errors to _error functions
+cleanup(){
+
+        rm /dev/shm/routertools.netrec.inet 2>/dev/null
+        rm /dev/shm/routertools.netrec.dns 2>/dev/null
+
         if [[ $quiet != 1 ]]; then
+            _exit "x86routertools was terminated by the user."
+        fi
+
+}
+
+error(){
+
+# Functions that can error should give their errors to _error functions
+    if [[ $quiet != 1 ]]; then
         error_count=$(( $error_count + 1 ))
         echo " [x86routertools error $error_suffix:" "$@"
         echo " Happened in ${FUNCNAME[$((1 + $crit_add))]}, call stack: ${FUNCNAME[*]}]" >&2
-        fi
-        return $?  
+    fi
+    return $?  
+
 }
 
 crit_error(){
@@ -159,14 +173,17 @@ crit_count=$(( crit_count + 1 ))
 
 # Jump up on the call stack
 crit_add=1
+
 error_suffix="(critical)"
 error "$@"
 unset error_suffix
+
 crit_add=0
 
 if [[ "$nofail" != "1" ]]; then
-        exit 1
+        _exit
 fi 
+
 }
 
 # ifv runs a command only if we are in verbose mode
@@ -178,23 +195,29 @@ return $?
 getphy(){
 # Takes a wifi device and spits out its sanitized PHY number
 phy=$(iw dev "$i" info | grep -i "wiphy" | tr -d "wiphy[:blank:]" | cut -c 1)
+
 if [[ "$phy" == "" ]]; then
     return 1
     else
     return 0
 fi
+
 }
 
 initfile(){
+
 # Initializes config files as sourceable bash scripts
 for i_file in $@; do
-ifv echo "Initialized file $i_file"
-echo "#!/bin/bash" > $i_file
+    ifv echo "Initialized file $i_file"
+    echo "#!/bin/bash" > $i_file
 done 
+
 unset i_file
+
 }
 
 checksu(){
+
 # Checks if we are root
 if [[ ! "$EUID" -eq 0 ]]; then
         return 1
@@ -205,19 +228,20 @@ fi
 }
 
 rootnotify(){
+
 # Global notifications function
 # Notifies X11 users via notify-send
 if [[ "$notify_mode" == "x11" ]] || [[ "$notify_mode" == "both" ]]; then
-local display=":$(ls /tmp/.X11-unix/* | sed 's#/tmp/.X11-unix/X##' | head -n 1)"
-local user=$(who | grep '('$display')' | awk '{print $1}' | head -n 1)
-local uid=$(id -u $user)
-
-sudo -u $user DISPLAY=$display DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus notify-send -a x86routertools "$@"
+    local display=":$(ls /tmp/.X11-unix/* | sed 's#/tmp/.X11-unix/X##' | head -n 1)"
+    local user=$(who | grep '('$display')' | awk '{print $1}' | head -n 1)
+    local uid=$(id -u $user)
+    # Push notification
+    sudo -u $user DISPLAY=$display DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus notify-send -a x86routertools "$@"
 fi
 
 # Notifies TTY users via wall
 if [[ "$notify_mode" == "tty" ]] || [[ "$notify_mode" == "both" ]]; then
-wall -n "$@"
+    wall -n "$@"
 fi
 
 # Always return 0
@@ -225,52 +249,61 @@ return 0
 }
 
 resetcfg(){
+
 # Resets all configuration in /etc/routertools.d
 checksu || crit_error "You must be root to execute this function."
+
 echo "This will delete EVERYTHING under /etc/routertools.d"
 echo "Are you sure you want to do this?"
 echo "[Enter-> Continue] [Ctrl+C-> Cancel]"
+
+# "enter" detection
 read x
 unset x
 
-        rm -r /etc/routertools.d
-        initfs
-        return $?
+rm -r /etc/routertools.d
+initfs
+return $?
 }
 
 initfs(){
+    
 # Initialize folders and populate config files
 
+if [[ ! -d /dev/shm/x86routertools ]]; then
+    mkdir /dev/shm/x86routertools || crit_error "Creating folder failed! You probably aren't root, please try again as root."
+fi
+
 if [[ ! -d /etc/routertools.d ]]; then
+    echo "Attempting to create /etc/routertools.d"
+    mkdir /etc/routertools.d || crit_error "Creating folder failed! You probably aren't root, please try again as root."
+    echo "Creating basic directory structure in /etc/routertools.d"
+    mkdir /etc/routertools.d/wifi-access-points
+    mkdir /etc/routertools.d/scripts
         
-        echo "Attempting to create /etc/routertools.d"
-        mkdir /etc/routertools.d || crit_error "Creating folder failed! You probably aren't root, please try again as root."
-        echo "Creating basic directory structure in /etc/routertools.d"
-        mkdir /etc/routertools.d/wifi-access-points
-        mkdir /etc/routertools.d/scripts
+    initfile /etc/routertools.d/scripts/stop-internet
+    initfile /etc/routertools.d/scripts/start-internet
+    initfile /etc/routertools.d/x86routertools.conf
+    initfile /etc/routertools.d/wifi-access-points/example_interface.conf 
         
-        initfile /etc/routertools.d/scripts/stop-internet
-        initfile /etc/routertools.d/scripts/start-internet
-       	initfile /etc/routertools.d/x86routertools.conf
-        initfile /etc/routertools.d/wifi-access-points/example_interface.conf 
-        
-        echo "Setting permissions on /etc/routertools.d"
-        chmod 700 /etc/routertools.d/*
-        chmod og+xr /etc/routertools.d
-       	chmod og+xr /etc/routertools.d/x86routertools.conf
-       	chmod og+xr /etc/routertools.d/wifi-access-points/example_interface.conf
-       	chmod og+xr /etc/routertools.d/wifi-access-points
+    echo "Setting permissions on /etc/routertools.d"
+    chmod 700 /etc/routertools.d/*
+    chmod og+xr /etc/routertools.d
+    chmod og+xr /etc/routertools.d/x86routertools.conf
+    chmod og+xr /etc/routertools.d/wifi-access-points/example_interface.conf
+    chmod og+xr /etc/routertools.d/wifi-access-points
        	
-       	# Hostapd file may contain plaintext passwords
-       	chmod -R 700 /etc/routertools.d/wifi-access-points/example_interface_hostapd.conf
+    # Hostapd file may contain plaintext passwords
+    chmod -R 700 /etc/routertools.d/wifi-access-points/example_interface_hostapd.conf
        	
-        echo "Downloading example hostapd.conf from w1.fi"
-        wget https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O /etc/routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
+    echo "Downloading example hostapd.conf from w1.fi"
+    wget https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O /etc/routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
         
-        # Populate files
-        initfile /etc/routertools.d/scripts/start-internet
-        initfile /etc/routertools.d/scripts/stop-internet                
+    # Populate files
+    initfile /etc/routertools.d/scripts/start-internet
+    initfile /etc/routertools.d/scripts/stop-internet                
         
+        # Contents of config files
         d="/etc/routertools.d"
         f="$d/scripts/start-internet"
         echo "# This script is run with start-internet and alike commands" >> $f
@@ -324,6 +357,10 @@ if [[ ! -d /etc/routertools.d ]]; then
         echo "# ack_filter_wifi_only -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
         echo "# will only be active on wifi interfaces, which tend to be quite asymmetric." >> $f
         echo "ack_filter_wifi_only=false" >> $f
+        echo "" >> $f
+		echo "# ack_filter_no_ppp -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
+		echo "# will not be enabled on ppp interfaces. try this if you encounter problems with ppp" >> $f
+        echo "ack_filter_no_ppp=false" >> $f
         echo "" >> $f
         echo "# restart_services_for_wifi -> a boolean. if true, important_services will be automatically restarted alongside wifi interfaces." >> $f
         echo "restart_services_for_wifi=false" >> $f
@@ -406,12 +443,12 @@ if [[ ! -d /etc/routertools.d ]]; then
         echo "wifi_paprd=false" >> $f
         echo "" >> $f
         echo "# wifi_retry_short -> a number. sets the limit of times the AP will retry sending a packet before dropping it." >> $f
-        echo "# default is 7, but some experimentation is possible. reducing this may help with bufferbloat" >> $f
-        echo "wifi_retry_short=7" >> $f
+        echo "# default is 3" >> $f
+        echo "wifi_retry_short=3" >> $f
         echo "" >> $f
         echo "# wifi_retry_long -> a number. sets the limit of times the AP will retry sending a packet before dropping it in RTS/CTS mode." >> $f
-        echo "# default is 7, but some experimentation is possible. reducing this may help with bufferbloat" >> $f
-        echo "wifi_retry_long=7" >> $f
+        echo "# default is 2" >> $f
+        echo "wifi_retry_long=2" >> $f
         echo "" >> $f
         echo "# wifi_lnamix -> a boolean. true enables low noise amplifier mixing, only works on Atheros cards." >> $f
         echo "# lnamix might help signal strength." >> $f
@@ -457,21 +494,23 @@ if [[ ! -d /etc/routertools.d ]]; then
         unset f
         unset d
 fi
-        mkdir /dev/shm/x86routertools 2>/dev/null
 }
 
 # Checks if value is a valid boolean (script uses lowercase)
 is_bool(){
+    
 	local value="$1"
 	if [[ "$value" == "true" ]] || [[ "$value" == "false" ]]; then
 		return 0
 		else
 		return 1
 	fi
+	
 }
 
 # Checks if value is a valid integer
 is_int(){
+    
 	local value="$1"
 	case ${value#[-+]} in
 	  *[!0-9]*) return 1 ;;
@@ -483,52 +522,63 @@ is_int(){
 
 # Checks if a given MAC address is valid (regex)
 check_mac_valid(){
+
 local dmac="$1"
+
 if [[ "$dmac" =~ ^([a-fA-F0-9]{2}:){5}[a-fA-F0-9]{2}$ ]]; then
-return 0
+    return 0
 else
-return 1
+    return 1
 fi
+
 }
 
 # Display a rapidly updating graph of Adaptive Noise Immunity stats for a given AP
 display_ani(){
+
 checksu || crit_error "You must be root to use debugfs."
 local i="$1"
 check_iface_exists $i || crit_error "Interface $i is not available"
 getphy $i
+
 watch -n 0.1 cat /sys/kernel/debug/ieee80211/phy$phy/ath9k/ani
+
 }
 
 # Display a rapidly updating graph of queue discipline data for a given interface
 display_qdisc(){
-local i="$1"
 
+local i="$1"
 watch -n .1 tc -s qdisc show dev $i
+
 }
 
 # Display a rapidly updating graph of data rate stats for a given MAC address and AP
 display_rates(){
+
 checksu || crit_error "You must be root to use debugfs."
-device_mac="$2"
+local device_mac="$2"
 local i="$1"
 check_iface_exists $i || crit_error "Interface $i is not available"
 getphy $i
 check_mac_valid $device_mac || crit_error "Invalid MAC address: $device_mac"
 
 watch -n 0.1 cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/rc_stats
+
 }
 
 # Display a rapidly updating graph of airtime usage for a given MAC address and AP
 display_airtime(){
+
 checksu || crit_error "You must be root to use debugfs."
-device_mac="$2"
+local device_mac="$2"
 local i="$1"
 check_iface_exists $i || crit_error "Interface $i is not available"
 getphy $i
 check_mac_valid $device_mac || crit_error "Invalid MAC address: $device_mac"
 
 watch -n 0.1 cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/airtime
+
 }
 
 # Display a rapidly updating graph of all connected devices to the local machine
@@ -544,11 +594,12 @@ arp -ev
 # Disable (or attempt to) CCK rates so we don't take up massive amounts of airtime
 # Probably doesn't work
 disable_cck_rates(){
+
 checksu || crit_error "You must be root to toggle this."
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -557,15 +608,18 @@ for i in $wifi_ap_interfaces; do
 	iw $i set bitrates legacy-2.4 6 9 12 18 24 36 48 54 2>/dev/null || iw $i set bitrates legacy-2.4 1 2 5.5 11 2>/dev/null
 	echo "Disabled cck rates on $i"
 done
+
 }
 
 # Enable Adaptive Noise Immunity
 ani_on(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -575,15 +629,18 @@ for i in $wifi_ap_interfaces; do
 	echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/ani 2>/dev/null || error "Failed to set parameter"
 	echo "Set ani -> 1 on $i"
 done
+
 }
 
 # Disable Adaptive Noise Immunity
 ani_off(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -593,15 +650,18 @@ for i in $wifi_ap_interfaces; do
 	echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/ani 2>/dev/null || error "Failed to set parameter"
 	echo "Set ani -> 0 on $i"
 done
+
 }
 
 # Enable Digital Predistortion
 paprd_on(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -611,15 +671,18 @@ for i in $wifi_ap_interfaces; do
 	echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/paprd 2>/dev/null || error "Failed to set parameter"
 	echo "Set paprd -> 1 on $i"
 done
+
 }
 
 # Disable Digital Predistortion
 paprd_off(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -629,15 +692,18 @@ for i in $wifi_ap_interfaces; do
 	echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/paprd 2>/dev/null || error "Failed to set parameter"
 	echo "Set paprd -> 0 on $i"
 done
+
 }
 
 # Enable LNA mixing
 lnamix_on(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -647,15 +713,18 @@ for i in $wifi_ap_interfaces; do
 	echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/antenna_diversity 2>/dev/null || error "Failed to set parameter"
 	echo "Set lnamix -> 1 on $i"
 done
+
 }
 
 # Disable LNA mixing
 lnamix_off(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -665,15 +734,18 @@ for i in $wifi_ap_interfaces; do
 	echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/antenna_diversity 2>/dev/null || error "Failed to set parameter"
 	echo "Set lnamix -> 0 on $i"
 done
+
 }
 
 # Enable ACK timeout estimation algorithm
 dynack_on(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -682,15 +754,18 @@ for i in $wifi_ap_interfaces; do
 	iw phy$phy set distance auto || error "Failed to set parameter"
 	echo "Set dynack -> 1 on $i"
 done
+
 }
 
 # Disable ACK timeout estimation algorithm
 dynack_off(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -699,15 +774,18 @@ for i in $wifi_ap_interfaces; do
 	iw phy$phy set distance 100m >/dev/null 2>&1 || error "Failed to set parameter"
 	echo "Set dynack -> 0 on $i"
 done
+
 }
 
 # Enable power management
 powersave_on(){
-	checksu || crit_error "You must be root to toggle this."
+
+checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -715,15 +793,18 @@ for i in $wifi_ap_interfaces; do
 	iw dev $i set power_save on >/dev/null 2>&1 || error "Failed to set parameter"
 	echo "Set powersave -> 1 on $i"
 done
+
 }
 
 # Disable power management
 powersave_off(){
+
 checksu || crit_error "You must be root to toggle this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
@@ -731,26 +812,33 @@ for i in $wifi_ap_interfaces; do
 	iw dev $i set power_save off >/dev/null 2>&1 || error "Failed to set parameter"
 	echo "Set powersave -> 0 on $i"
 done
+
 }
 
 # Disable custom SQM
 sqm_disable(){
+
 checksu || crit_error "You must be root to use SQM."
+
 local ifaces=$(ifconfig | grep -i 'flags=' | grep -v 'lo' | grep -v 'loopback' |  sed 's/:.*//')
 
 for i in $ifaces; do
-		tc qdisc del dev $i root 2>/dev/null
-		# FQ-CoDel is a safe alternative
-                # if this fails system default (probably none) will stay
-		tc qdisc add dev $i root fq_codel 2>/dev/null
+    tc qdisc del dev $i root 2>/dev/null
+    # FQ-CoDel is a safe alternative
+    # if this fails system default (probably none) will stay
+    tc qdisc add dev $i root fq_codel 2>/dev/null
 done
+
 # Print qdiscs in use.
 ifv tc qdisc
+
 }
 
 # Enable custom SQM for bufferbloat
 sqm_enable(){
+
 checksu || crit_error "You must be root to use SQM."
+
 # Group interfaces into categories
 local ifaces=$(ifconfig | grep -i 'flags=' | grep -v 'lo' | grep -v 'loopback' |  sed 's/:.*//')
 local ethernet_ifaces=$(echo "$ifaces" | grep -E 'enp|ens|eth')
@@ -783,50 +871,63 @@ if [[ "$ack_filter_wifi_only" != "true" ]]; then
 fi
 
 if [[ $sqm_diffserv -eq 0 ]]; then
+
     diffserv="besteffort "
-    elif [[ $sqm_diffserv -gt 0 ]]; then
-    diffserv="diffserv${sqm_diffserv} "
+    
+        elif [[ $sqm_diffserv -gt 0 ]]; then
+        diffserv="diffserv${sqm_diffserv} "
+        
     else
     diffserv="diffserv4 "
+    
 fi
 
 # Apply qdisc in categories
 for i in $ppp_ifaces; do
+
+restore_extra_arg=${extra_arg}
+
+if [[ $ack_filter_no_ppp == "true" ]]; then
+extra_arg=""
+fi
+
 ifb_check=$(echo "$ifb_ifaces" | grep -i "$i")
 
-    if [[ "$ifb_check" = "" ]]; then
-tc qdisc del dev $i root 2>/dev/null
+if [[ "$ifb_check" = "" ]]; then
+    
+    tc qdisc del dev $i root 2>/dev/null
 
-if [[ "$sqm_inet_upload" != "" ]]; then
-tc qdisc add dev $i root cake ${diffserv}nat ${overhead}bandwidth "$sqm_inet_upload"Mbit $extra_arg
-else
-tc qdisc add dev $i root cake ${diffserv}nat ${overhead}$extra_arg
-fi
-
-ip link add name ifb$i type ifb
-tc qdisc del dev $i ingress
-tc qdisc add dev $i handle ffff: ingress
-tc qdisc del dev ifb$i root
-
-if [[ "$sqm_use_overheads" == "true" ]]; then
-    overhead="overhead 35 "
+    if [[ "$sqm_inet_upload" != "" ]]; then
+        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}bandwidth "$sqm_inet_upload"Mbit $extra_arg
     else
-    overhead=""
-fi
+        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}$extra_arg
+    fi
 
-if [[ "$sqm_inet_download" != "" ]]; then
-tc qdisc add dev ifb$i root cake ${diffserv}nat bandwidth "$sqm_inet_download"Mbit ${overhead}split-gso $extra_arg
-echo "Applying queue discipline to $i (ifb interface)"
-else
-tc qdisc add dev ifb$i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
-echo "Applying queue discipline to $i (ifb interface)"
-fi
+    ip link add name ifb$i type ifb
+    tc qdisc del dev $i ingress
+    tc qdisc add dev $i handle ffff: ingress
+    tc qdisc del dev ifb$i root
 
-ip link set ifb$i up
-sleep 0.01
-ip link set ifb$i up
-tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
-	fi
+    if [[ "$sqm_use_overheads" == "true" ]]; then
+        overhead="overhead 35 "
+        else
+        overhead=""
+    fi
+
+    if [[ "$sqm_inet_download" != "" ]]; then
+        tc qdisc add dev ifb$i root cake ${diffserv}nat bandwidth "$sqm_inet_download"Mbit ${overhead}split-gso $extra_arg
+        echo "Applying queue discipline to $i (ifb interface)"
+    else
+        tc qdisc add dev ifb$i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
+        echo "Applying queue discipline to $i (ifb interface)"
+    fi
+
+    ip link set ifb$i up
+    tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
+
+fi
+	
+extra_arg=${restore_extra_arg}
 done
 
 pppe_ifaces=$(tc qdisc | grep -E 'ppp' | grep -v 'ifb' | grep -v 'cake' | grep -v 'ingress')
@@ -840,24 +941,31 @@ fi
 
 for i in $ifbe_ifaces; do
 if [[ "$ifbe_ifaces" != "" ]]; then
+    
     for a in $(echo $i | grep -i "$ifb_ifaces"); do
         echo "Re-applying queue discipline to $i (ifb interface)"
         # Fix qdisc sometimes disappearing on network changes
         tc qdisc del dev $a root 2>/dev/null
+        
     if [[ "$sqm_wash_markings" != "true" ]]; then
         if [[ "$sqm_inet_download" != "" ]]; then
         tc qdisc add dev $a root cake ${diffserv}nat ${overhead}bandwidth "$sqm_inet_download"Mbit split-gso 2>/dev/null
         else
         tc qdisc add dev $a root cake ${diffserv}nat ${overhead}split-gso 2>/dev/null
         fi
-    elif [[ "$sqm_wash_markings" == "true" ]]; then
-        if [[ "$sqm_inet_download" != "" ]]; then
-        tc qdisc add dev $a root cake nat bandwidth "$sqm_inet_download"Mbit ${overhead}besteffort wash split-gso 2>/dev/null
+        
+            elif [[ "$sqm_wash_markings" == "true" ]]; then
+            if [[ "$sqm_inet_download" != "" ]]; then
+            tc qdisc add dev $a root cake nat bandwidth "$sqm_inet_download"Mbit ${overhead}besteffort wash split-gso 2>/dev/null
+        
         else
         tc qdisc add dev $a root cake nat besteffort ${overhead}wash split-gso 2>/dev/null
         fi
+        
     fi
+    
     done
+    
 fi
 done
 
@@ -868,18 +976,29 @@ if [[ "$sqm_use_overheads" == "true" ]]; then
 fi
 
 for i in $pppe_ifaces; do
+
+restore_extra_arg=${extra_arg}
+if [[ $ack_filter_no_ppp == "true" ]]; then
+extra_arg=""
+fi
+
 if [[ "$pppe_ifaces" != "" ]]; then
         for a in $(echo $i | grep -i "$ppp_ifaces"); do
-	# Fix qdisc sometimes disappearing on network changes
+        
+        # Fix qdisc sometimes disappearing on network changes
         echo "Re-applying queue discipline to $i (ppp interface)"
         tc qdisc del dev $a root 2>/dev/null
-        if [[ "$sqm_inet_upload" != "" ]]; then
-        tc qdisc add dev $a root cake ${diffserv}nat bandwidth "$sqm_inet_upload"Mbit ${overhead}split-gso $extra_arg 2>/dev/null
-        else
-        tc qdisc add dev $a root cake ${diffserv}nat ${overhead}split-gso $extra_arg 2>/dev/null
-        fi
+        
+            if [[ "$sqm_inet_upload" != "" ]]; then
+            tc qdisc add dev $a root cake ${diffserv}nat bandwidth "$sqm_inet_upload"Mbit ${overhead}split-gso $extra_arg 2>/dev/null
+            else
+            tc qdisc add dev $a root cake ${diffserv}nat ${overhead}split-gso $extra_arg 2>/dev/null
+            fi
+        
         done
 fi
+
+extra_arg=${restore_extra_arg}
 done
 
 if [[ "$sqm_use_overheads" == "true" ]]; then
@@ -889,10 +1008,15 @@ if [[ "$sqm_use_overheads" == "true" ]]; then
 fi
 
 for i in $ethernet_ifaces; do
+
 e_check=$(tc qdisc | grep -iF $i | grep -iF cake)
+
 if [[ "$e_check" = "" ]]; then
+
 echo "Applying queue discipline to $i (ethernet interface)"
+
 	if [[ "$sqm_enable_ifb_on_ethernet" == "true" ]]; then
+
 	ifb_check=$(echo "$ifb_ifaces" | grep -i "$i")
 		if [[ "$ifb_check" = "" ]]; then
 		tc qdisc del dev $i root 2>/dev/null
@@ -909,21 +1033,23 @@ echo "Applying queue discipline to $i (ethernet interface)"
 		tc qdisc del dev ifb$i root
 
     if [[ "$sqm_wash_markings" != "true" ]]; then
-		if [[ "$sqm_inet_download" != "" ]]; then
-		tc qdisc add dev ifb$i root cake ${diffserv}nat bandwidth "$sqm_inet_download"Mbit ${overhead}split-gso
+
+        if [[ "$sqm_inet_download" != "" ]]; then
+        tc qdisc add dev ifb$i root cake ${diffserv}nat bandwidth "$sqm_inet_download"Mbit ${overhead}split-gso
 		else
 		tc qdisc add dev ifb$i root cake ${diffserv}nat split-gso ${overhead}dual-dsthost
 		fi
-    elif [[ "$sqm_wash_markings" == "true" ]]; then
-        if [[ "$sqm_inet_download" != "" ]]; then
-		tc qdisc add dev ifb$i root cake nat bandwidth "$sqm_inet_download"Mbit split-gso ${overhead}besteffort wash
-		else
-		tc qdisc add dev ifb$i root cake nat split-gso besteffort wash ${overhead}dual-dsthost
-		fi
+
+        elif [[ "$sqm_wash_markings" == "true" ]]; then
+
+            if [[ "$sqm_inet_download" != "" ]]; then
+            tc qdisc add dev ifb$i root cake nat bandwidth "$sqm_inet_download"Mbit split-gso ${overhead}besteffort wash
+            else
+            tc qdisc add dev ifb$i root cake nat split-gso besteffort wash ${overhead}dual-dsthost
+            fi
+
     fi
     
-		ip link set ifb$i up
-		sleep 0.01
 		ip link set ifb$i up
 		tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
 		fi
@@ -955,12 +1081,15 @@ if [[ "$sqm_use_overheads" == "true" ]]; then
 fi
 
 for i in $wifi_ifaces; do
-i_check=$(tc qdisc | grep -i $i | grep -i cake)
-if [[ "$i_check" = "" ]]; then
-echo "Applying queue discipline to $i (wireless interface)"
-tc qdisc del dev $i root 2>/dev/null
-tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 17ms $extra_arg
-fi
+
+    i_check=$(tc qdisc | grep -i $i | grep -i cake)
+
+    if [[ "$i_check" = "" ]]; then
+    echo "Applying queue discipline to $i (wireless interface)"
+    tc qdisc del dev $i root 2>/dev/null
+    tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 17ms $extra_arg
+    fi
+
 done
 
 if [[ "$ack_filter_wifi_only" == "true" ]]; then
@@ -968,18 +1097,22 @@ if [[ "$ack_filter_wifi_only" == "true" ]]; then
 fi
 
 if [[ "$sqm_use_overheads" == "true" ]]; then
+    # Assume virtual interfaces don't have overhead
     overhead=""
     else
     overhead=""
 fi
 
 for i in $vir_ifaces; do
-i_check=$(tc qdisc | grep -i $i | grep -i cake)
-if [[ "$i_check" = "" ]]; then
-echo "Applying queue discipline to $i (virtual interface)"
-tc qdisc del dev $i root 2>/dev/null
-tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 10ms $extra_arg
-fi
+    
+    i_check=$(tc qdisc | grep -i $i | grep -i cake)
+
+    if [[ "$i_check" = "" ]]; then
+        echo "Applying queue discipline to $i (virtual interface)"
+        tc qdisc del dev $i root 2>/dev/null
+        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 10ms $extra_arg
+    fi
+
 done
 
 if [[ "$sqm_use_overheads" == "true" ]]; then
@@ -989,35 +1122,49 @@ if [[ "$sqm_use_overheads" == "true" ]]; then
 fi
 
 for i in $tun_ifaces; do
-i_check=$(tc qdisc | grep -i $i | grep -i cake)
+    
+    i_check=$(tc qdisc | grep -i $i | grep -i cake)
 
-if [[ "$i_check" = "" ]]; then
-echo "Applying queue discipline to $i (tunnel interface)"
-tc qdisc del dev $i root 2>/dev/null
-tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 300ms $extra_arg
-fi
+    if [[ "$i_check" = "" ]]; then
+        echo "Applying queue discipline to $i (tunnel interface)"
+        tc qdisc del dev $i root 2>/dev/null
+        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 300ms $extra_arg
+    fi
+
 done
+
+# Show qdisc info if verbose
 ifv tc qdisc
 
 if [[ "$enable_bbr" == "true" ]]; then
-	if [[ "$(sysctl net.ipv4.tcp_congestion_control | grep -iF bbr | wc -l)" -eq 0 ]]; then
-	echo "Selecting BBRv2 or BBRv1 if not available"
-	sysctl net.ipv4.tcp_congestion_control=bbr2 || sysctl net.ipv4.tcp_congestion_control=bbr
+
+	if [[ "$(sysctl net.ipv4.tcp_congestion_control | grep -iF bbr2 | wc -l)" -eq 0 ]]; then
+        echo "Enabled BBRv2 congestion control."
+        sysctl net.ipv4.tcp_congestion_control=bbr2
+            elif [[ "$(sysctl net.ipv4.tcp_congestion_control | grep -iF bbr | wc -l)" -eq 0 ]]; then
+                echo "Enabled BBRv1 congestion control, since your kernel does not have BBRv2 yet."
+    else
+        echo "Your kernel does not support either BBRv1 or BBRv2. Keeping default congestion control."
 	fi
+	
 fi
+
 }
 
 # ANI and PAPRD recalibration
 # Probably doesn't work
 ath9k_recalibrate(){
-	checksu || crit_error "You must be root to do this."
+
+checksu || crit_error "You must be root to do this."
+
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 for i in $wifi_ap_interfaces; do
+
 	echo "Recalibrating special ath9k features on $i"
 	ani_off $i
 	sleep 3
@@ -1028,45 +1175,55 @@ for i in $wifi_ap_interfaces; do
 	paprd_on $i
 	sleep 6.33
 	dynack_on $i
+
 done
+
 }
 
 # Critical error on bad options file
 load_prefs_error(){
+
 	if [[ -f /etc/routertools.d/x86routertools.conf ]]; then
-	crit_error "Syntax error on /etc/routertools.d/x86routertools.conf, cannot continue."
+        crit_error "Syntax error on /etc/routertools.d/x86routertools.conf, cannot continue."
 	else
-	echo "Looks like you have no system configuration files for x86routertools. (/etc/routertools.d/)"
-	echo "I'm going to generate them now."
-	rm -r /etc/routertools.d
+        echo "Looks like you have no system configuration files for x86routertools. (/etc/routertools.d/)"
+        echo "I'm going to generate them now."
+        rm -r /etc/routertools.d
         initfs
-        fi
+    fi
+
 }
 
 # Load contents of routertools options files
 load_prefs(){
-	set -a
+    
+        set -a
         source /etc/routertools.d/x86routertools.conf || load_prefs_error
+
 }
 
 # Load contents of wifi options files
 load_prefs_iface(){
+
         local i=$1
         set -a
         source /etc/routertools.d/wifi-access-points/$i.conf || error "Syntax error on interface configuration file"
+
 }
 
 # Get list of registered wifi profiles
 get_wifi_iface_list(){
+	
 	ls /etc/routertools.d/wifi-access-points | grep -i ".conf" | grep -v "_hostapd" | grep -v "example_" | cut -f 1 -d '.'
 	local iface_count=$(ls /etc/routertools.d/wifi-access-points | grep -i ".conf" | grep -v "_hostapd" | grep -v "example_" | wc -l)
 	
 	if [[ $iface_count -lt 1 ]]; then
         error "No wireless interfaces configured in /etc/routertools.d/wifi-access-points, please refer to the examples included and edit them."
         return 1
-        else
+    else
         return 0
 	fi
+	
 }
 
 # Stop hostapd and PHY
@@ -1095,85 +1252,88 @@ done
 ap_start(){
 
 if [[ $@ == "" ]]; then
-wifi_ap_interfaces="$(get_wifi_iface_list)"
+    wifi_ap_interfaces="$(get_wifi_iface_list)"
 else
-wifi_ap_interfaces="$@"
+    wifi_ap_interfaces="$@"
 fi
 
 checksu || crit_error "You must be root to execute this function."
 
 for i in $wifi_ap_interfaces; do
+        
         echo "Starting wifi access point on interface $i"
+        
         check_iface_exists $i
         load_prefs_iface $i
 
 		if [[ "$require_internet" == "true" ]]; then
 			echo "Internet requirement is enabled, checking connectivity"
-
+			
 			if check_inet_short; then
 				echo "Internet is reachable, continuing"
 				else
 				echo "Internet is not reachable, exiting"
 				_exit
 			fi
+			
 		fi
         
         # Most drivers never update their regdomain at runtime, so we must set it first.
         # Check to see if this is a two letter code
         if [[ "$wifi_regdomain" != "" ]] && [[ $(echo "$wifi_regdomain" | fold -w1 | wc -l) -eq 2 ]]; then
-        ifv echo "setting regulatory domain to $wifi_regdomain"
-        iw reg set $wifi_regdomain
+            ifv echo "setting regulatory domain to $wifi_regdomain"
+            iw reg set $wifi_regdomain
         elif [[ "$wifi_regdomain" != "" ]] && [[ $(echo "$wifi_regdomain" | fold -w1 | wc -l) -ne 2 ]]; then
-        crit_error "$wifi_regdomain is not a valid regulatory domain! It must be a two letter country code."
+            crit_error "$wifi_regdomain is not a valid regulatory domain! It must be a two letter country code."
         fi
         
         for driver in $wifi_drivers; do
+        	
         	if [[ "$wifi_reload_drivers" == "true" ]]; then
         		modprobe -r $driver
-        		sleep .33
         	fi
+        	
         	modprobe $driver
+        
         done
         
-        sleep .33
     	getphy $i
         check_can_be_ap $i
         check_services_exist        
-        
         ap_stop 2>&1 >/dev/null
         
         if [[ "$wifi_powersave" == "true" ]]; then
         	powersave_on $i
-        	sleep 1.33
-        	elif [[ "$wifi_powersave" == "false" ]]; then
-        	powersave_off $i 2>/dev/null
+                elif [[ "$wifi_powersave" == "false" ]]; then
+                powersave_off $i 2>/dev/null
         fi
-        
-        sleep 3.33
+
         getphy $i || crit_error "Couldn't get a phy number for interface $i even after trying twice, this usually means your network card isn't initialized by the driver yet."
+        
+        # Execute hostapd
         hostapd /etc/routertools.d/wifi-access-points/${i}_hostapd.conf &
         hostapd_pid=$!
-        disown -h
+        
         echo "$hostapd_pid" > /dev/shm/hostapd_pid_$i
+        
         chmod og+r /dev/shm/hostapd_pid_$i
+        
         ifv echo "storing hostapd pid in /dev/shm/hostapd_pid_$i"
         ifv echo "hostapd pid for $i -> $hostapd_pid"
         
-        echo "Giving some time for hostapd to be fully ready..."
-        ifv echo "This delay is configurable."
+        echo "Waiting $hostapd_wait_for_secs seconds for hostapd to be ready."
         sleep $hostapd_wait_for_secs
+        
         setup_ap_networking $i || error "An error occourred trying to set up network sharing."
         setup_ap_helpers $i
         
         if [[ "$wifi_disable_cck" == "true" ]]; then
             disable_cck_rates $i
-            sleep .33
         fi
         
         if [[ $wifi_retry_short -gt 0 ]] && [[ $wifi_retry_long -gt 0 ]]; then
             iw phy$phy set retry short $wifi_retry_short || error "failed to set wifi_retry_short, continuing"
             iw phy$phy set retry long $wifi_retry_long || error "failed to set wifi_retry_long, continuing"
-            sleep .33
         fi
         
         if [[ $wifi_coverage -gt 0 ]]; then
@@ -1183,43 +1343,36 @@ for i in $wifi_ap_interfaces; do
         if [[ "$wifi_txpower" != "auto" ]]; then
         	[[ $wifi_txpower -gt 0 ]] || error "wifi_txpower must be a number > 0!"
         	iw phy$phy set txpower $wifi_txpower 2>/dev/null
-        	sleep 1.33
         	else
         	iw phy$phy set txpower auto
-        	sleep 1.33
         fi
         
         if [[ "$wifi_paprd" == "true" ]]; then
         	paprd_on $i
-        	sleep 1.33
         	elif [[ "$wifi_paprd" == "false" ]]; then
         	paprd_off $i 2>/dev/null
         fi
         
         if [[ "$wifi_lnamix" == "true" ]]; then
         	lnamix_on $i
-        	sleep 1.33
         	elif [[ "$wifi_lnamix" == "false" ]]; then
         	lnamix_off $i 2>/dev/null
         fi
         
         if [[ "$wifi_dynack" == "true" ]]; then
         	dynack_on $i
-        	sleep 1.33
         	elif [[ "$wifi_dynack" == "false" ]]; then
         	dynack_off $i 2>/dev/null
         fi
         
         if [[ "$wifi_powersave" == "true" ]]; then
         	powersave_on $i
-        	sleep 1.33
         	elif [[ "$wifi_powersave" == "false" ]]; then
         	powersave_off $i 2>/dev/null
         fi
         
         if [[ "$wifi_ani" == "true" ]]; then
         	ani_on $i
-        	sleep 1.33
         	elif [[ "$wifi_ani" == "false" ]]; then
         	ani_off $i 2>/dev/null
         fi
@@ -1234,41 +1387,49 @@ for i in $wifi_ap_interfaces; do
 
                 darkstat --user darkstat -i $i -p $wifi_darkstat_port 2>/dev/null &
                 darkstat_pid=$?
-                disown -h
                 echo "$darkstat_pid" > /dev/shm/darkstat_pid_$i
         fi
         
         if [[ "$restart_services_for_wifi" == "true" ]]; then
-        restart_services
+            restart_services
         fi
 done
 _exit
+
 }
 
 # Checks if PHY can be in master/AP mode
 check_can_be_ap(){
+
         local i=$1
-        sleep 1.33
         getphy $i
+
         [[ $(iw phy$phy info | grep -E '{.* managed.* AP.*}' | wc -l) -gt 0 ]] || crit_error "This interface does not support AP and Managed modes! You may not use it."
+
 }
 
 # Checks if common router services are installed, optional
 check_services_exist(){
+    
         if [[ "$silence_check_services" != "true" ]]; then
         echo "Checking installed services"
         echo "You can silence these messages in the configuration file."
-        dnsmasq -v 2>&1 >/dev/null || error "dnsmasq is not installed, your wifi access point may not offer its own DHCP unless dnsmasq is installed and configured."
-        dhcpcd --version 2>&1 >/dev/null || error "dhcpcd is not installed, your wifi access point may not be able to use DHCP from another router."
-        hostapd -v 2>&1 >/dev/null || error "hostapd is not installed, your wifi access point can not be started without it."
-        haveged -V 2>&1 >/dev/null || error "haveged is not installed, your wifi access point needs entropy and might be less secure without it. Please, please don't use open networks unless you really need to."
-        [[ $(networkctl 2>&1 | grep -iF "systemd-networkd is not running" | wc -l) -gt 0 ]] && error "systemd-networkd might be running. It may conflict with your wifi access point."
+        
+            dnsmasq -v 2>&1 >/dev/null || error "dnsmasq is not installed, your wifi access point may not offer its own DHCP unless dnsmasq is installed and configured."
+            dhcpcd --version 2>&1 >/dev/null || error "dhcpcd is not installed, your wifi access point may not be able to use DHCP from another router."
+            hostapd -v 2>&1 >/dev/null || error "hostapd is not installed, your wifi access point can not be started without it."
+            haveged -V 2>&1 >/dev/null || error "haveged is not installed, your wifi access point needs entropy and might be less secure without it. Please, please don't use open networks unless you really need to."
+            [[ $(networkctl 2>&1 | grep -iF "systemd-networkd is not running" | wc -l) -gt 0 ]] && error "systemd-networkd might be running. It may conflict with your wifi access point."
+        
         fi
+        
 }       
 
 # Checks if the interface actually exists
 check_iface_exists(){
+    
         local i=$1
+        
         if [[ ! -f /etc/routertools.d/wifi-access-points/$i.conf ]]; then
                 crit_error "This interface does not have a configuration file."
         fi
@@ -1276,25 +1437,27 @@ check_iface_exists(){
         if [[ ! -f /etc/routertools.d/wifi-access-points/"$i"_hostapd.conf ]]; then
                 crit_error "This interface does not have a hostapd configuration file."
         fi
+        
 }
 
 # Checks if the specified wifi AP is up
 check_ap(){
+    
 if [[ $@ == "" ]]; then
-ifaces="$(get_wifi_iface_list)"
+    ifaces="$(get_wifi_iface_list)"
 else
-ifaces="$@"
+    ifaces="$@"
 fi
 
 for i in $ifaces; do
+
 	is_on=$(netstat -i | grep $i | wc -l)
 	is_ap=$(iw "$i" info | grep -i type | grep -ic 'AP')
 	check_iface_exists $i
 	
 	if [[ $is_on -lt 1 ]] || [[ $is_ap -lt 1 ]]; then
 		echo "Interface $i is down."
-		checksu || echo "You need to be root for this to start it back up."
-		checksu || exit 1
+		checksu || crit_error "You need to be root for this to start it back up."
 		echo "Starting it now."
 		ap_start $i
 	else
@@ -1303,17 +1466,19 @@ for i in $ifaces; do
 			ifv echo "Netstat dump: $(netstat -i | grep -i wlp4s0 | tr -d [:alpha:] | tr -d [:blank:])"
 		else
 			echo "Interface $i is down, not in AP mode or its hostapd instance is not running."
-			checksu || echo "You need to be root for this to start it back up."
-			checksu || exit 1
+			checksu || crit_error "You need to be root for this to start it back up."
 			echo "Attempting to start $i now."
 			ap_start $i
 		fi
 	fi
+	
 done
+
 }
 
 # Sets up basic iptables and gateway for the wifi AP
 setup_ap_networking(){
+    
         local i=$1
         w=0
         z=0
@@ -1346,27 +1511,26 @@ setup_ap_networking(){
 		
         echo "Gateway for interface $i is $gateway"
         ip addr flush $i
-        sleep .33
         ip link set up dev $i
         ip addr add $gateway/24 broadcast ${gateway%.*}.255 dev $i
         iptables -w -t nat -I POSTROUTING -s ${gateway%.*}.0/24 ! -o $i -j MASQUERADE
         iptables -w -I FORWARD -i $i -s ${gateway%.*}.0/24 -j ACCEPT
-        iptables -w -I FORWARD -i lo -d ${gateway%.*}.0/24 -j ACCEPT
-        iptables -w -I FORWARD -i $inet_iface -d ${gateway%.*}.0/24 -j ACCEPT 2>/dev/null
+        iptables -w -I FORWARD -i lo -d ${gateway%.*}.0/24 -j ACCEPT && echo "CONNECTED (v4): interface lo <-> interface $i"
+        iptables -w -I FORWARD -i $inet_iface -d ${gateway%.*}.0/24 -j ACCEPT 2>/dev/null && echo "CONNECTED (v4): interface $inet_iface <-> interface $i"
         echo 1 > /proc/sys/net/ipv4/conf/lo/forwarding
         echo 1 > /proc/sys/net/ipv4/ip_forward
 
         if [[ "$enable_ipv6" == "true" ]]; then
-        echo "Enabling IPv6 support"
+        echo "Configuring static IPv6"
         
 			if [[ "$gateway_6" != "" ]]; then
 		         # Configure iptables v6
-			 echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
+                 echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
 		         ip -6 addr add $gateway_6/64 broadcast ${gateway_6%:*}:ffff dev $i
        			 ip6tables -w -t nat -I POSTROUTING -s ${gateway_6%:*}:ffff/64 ! -o $i -j MASQUERADE
        			 ip6tables -w -I FORWARD -i $i -s ${gateway_6%:*}:ffff/64 -j ACCEPT
-       			 ip6tables -w -I FORWARD -i lo -d ${gateway_6%:*}:ffff/64 -j ACCEPT
-        		 ip6tables -w -I FORWARD -i $inet_iface -d ${gateway_6%:*}:ffff/64 -j ACCEPT 2>/dev/null
+       			 ip6tables -w -I FORWARD -i lo -d ${gateway_6%:*}:ffff/64 -j ACCEPT &&  echo "CONNECTED (v6): interface lo <-> interface $i"
+       			 ip6tables -w -I FORWARD -i $inet_iface -d ${gateway_6%:*}:ffff/64 -j ACCEPT 2>/dev/null && echo "CONNECTED (v6): interface $inet_iface <-> interface $i"
 			 else
 		         echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
 			fi
@@ -1374,13 +1538,12 @@ setup_ap_networking(){
         fi
 	
         echo 1 > /proc/sys/net/ipv4/ip_forward
-        # For establishing PPTP connections
+        
         if [[ $enable_pptp == "true" ]]; then
-        echo "Enabling PPTP support"
-        modprobe nf_nat_pptp > /dev/null 2>&1
+            echo "Enabling PPTP support"
+            modprobe nf_nat_pptp > /dev/null 2>&1
         fi
-
-        echo "CONNECTED: interface lo <-> interface $i"
+        
       done
         
         if [[ "$enable_cake_sqm" == "true" ]]; then
@@ -1390,43 +1553,51 @@ setup_ap_networking(){
 
 # Set up additional services for entropy generation, optional
 setup_ap_helpers(){
+    
         local i=$1
+        
         if [[ "$enable_rngd" == "true" ]]; then
-        systemctl start rngd || error "Couldn't start entropy provider `rngd` from `rng-tools`"
+            systemctl restart rngd || error "Couldn't start entropy provider `rngd` from `rng-tools`"
         fi
 
-        systemctl start haveged || error "Couldn't start entropy provider `haveged`. Your network will still work but may be less secure."
+        systemctl restart haveged || error "Couldn't start entropy provider `haveged`. Your network will still work but may be less secure."
 
 }
 
 # Checks if the specified systemd service is online
 get_service_status(){
+    
 	local i=$1
 	systemctl --no-pager 2>&1 | grep -iF $i | grep -iF active | wc -l
+
 }
 
 # DNS status check function
 get_dns_status(){
-	# Check whether or not we can resolve domain names
-        local domain="$1"
+    
 		# Check if the user actually put in a number in the config.
-		if [[ "$inet_check_timeout" != "" ]] && [[ $inet_check_timeout -eq $inet_check_timeout ]]; then
+    if [[ "$inet_check_timeout" != "" ]] && [[ $inet_check_timeout -eq $inet_check_timeout ]]; then
 		ifv echo "inet_check_timeout is ${inet_check_timeout}s"
 		local inet_check_timeout=$(( $inet_check_timeout * 10 )) # n * 100ms
 		local inet_check_ping_timeout=$(( $inet_check_timeout / 10)) # n * 1s
-		else
+    else
 		# Defaults to this
 		ifv echo "inet_check_timeout $inet_check_timeout is invalid, defaulting to 7s"
 		local inet_check_timeout=70 # n * 100ms
-                local inet_check_ping_timeout=$(( $inet_check_timeout / 10)) # n * 1 s
-		fi
-        if [[ "$domain" == "" ]]; then
-            domain="google.com"
-        fi
+        local inet_check_ping_timeout=$(( $inet_check_timeout / 10)) # n * 1 s
+    fi
+    
+    if [[ "$domain" == "" ]]; then
+        domain="google.com"
+    fi
+        
 	rm /dev/shm/routertools.netrec.dns 2>/dev/null
+	
 	stdbuf -oL ping -w $inet_check_ping_timeout $domain 2>&1 | stdbuf -oL grep -v PING > /dev/shm/routertools.netrec.dns &
+	
 	local ping_pid=$!
 	local elapsed=0
+	
 	# Sometimes ping will get stuck. This kills ping.
 	while [[ $elapsed -lt $inet_check_timeout ]]; do
 		elapsed=$(( $elapsed + 1))
@@ -1436,26 +1607,28 @@ get_dns_status(){
 	
 	local dnscheck=$(cat /dev/shm/routertools.netrec.dns 2>/dev/null | grep -Ei "Name or service not known|temporary" | wc -l)
 	
-        if [[ $elapsed -eq $inet_check_timeout ]] && [[ ! -s /dev/shm/routertools.netrec.dns ]]; then
-               local dnscheck=1
-        fi
+    if [[ $elapsed -eq $inet_check_timeout ]] && [[ ! -s /dev/shm/routertools.netrec.dns ]]; then
+        local dnscheck=1
+    fi
         
 	if [[ $dnscheck -gt 0 ]]; then
-                rm /dev/shm/routertools.netrec.dns 2>/dev/null
-                kill $ping_pid 2>/dev/null
+        rm /dev/shm/routertools.netrec.dns 2>/dev/null
+        kill $ping_pid 2>/dev/null
 		return 1
-		else
+    else
 		echo "Domain name $domain can be resolved."
-                rm /dev/shm/routertools.netrec.dns 2>/dev/null
-                kill $ping_pid 2>/dev/null
+        rm /dev/shm/routertools.netrec.dns 2>/dev/null
+        kill $ping_pid 2>/dev/null
 		return 0
 	fi
 	
 	kill $ping_pid 2>/dev/null
 	rm /dev/shm/routertools.netrec.dns
+	
 }
 
 get_hostapd_status(){
+    
 	local i=$1
 	# We need to find out if hostapd is running for an interface to know
 	# if it's actually "up".
@@ -1475,19 +1648,18 @@ get_hostapd_status(){
 
 }
 
-
+# Check wheter or not we can reach servers on the internet
 get_inet_status(){
-	# Check wheter or not we can reach servers on the internet
-	
-		# Check if the user actually put in a number in the config.
-		if [[ "$inet_check_timeout" != "" ]] && [[ $inet_check_timeout -eq $inet_check_timeout ]]; then
-		local inet_check_timeout=$(( $inet_check_timeout * 10 )) # n * 100ms
-		local inet_check_ping_timeout=$(( $inet_check_timeout / 10)) # n * 1s
-		else
-		# Defaults to this
-		local inet_check_timeout=70 # n * 100ms
-                local inet_check_ping_timeout=$(( $inet_check_timeout / 10)) # n * 1 s
-		fi	        
+    
+    # Check if the user actually put in a number in the config.
+    if [[ "$inet_check_timeout" != "" ]] && [[ $inet_check_timeout -eq $inet_check_timeout ]]; then
+        local inet_check_timeout=$(( $inet_check_timeout * 10 )) # n * 100ms
+        local inet_check_ping_timeout=$(( $inet_check_timeout / 10)) # n * 1s
+    else
+        # Defaults to this
+        local inet_check_timeout=70 # n * 100ms
+        local inet_check_ping_timeout=$(( $inet_check_timeout / 10)) # n * 1 s
+    fi	        
 
 	local ip="$1"
 
@@ -1504,31 +1676,32 @@ get_inet_status(){
 	while [[ $elapsed -lt $inet_check_timeout ]]; do
 		elapsed=$(( $elapsed + 1))
 		[[ -f /dev/shm/routertools.netrec.inet ]] && [[ -s /dev/shm/routertools.netrec.inet ]] && break
-                sleep .1
+        sleep .1
 	done
 	
 	local inetcheck=$(cat /dev/shm/routertools.netrec.inet 2>/dev/null | grep -Ei "unreachable|temporary" | wc -l)
 	
-        if [[ $elapsed -eq $inet_check_timeout ]] && [[ ! -s /dev/shm/routertools.netrec.inet ]]; then
-                local inetcheck=1
-        fi
+    if [[ $elapsed -eq $inet_check_timeout ]] && [[ ! -s /dev/shm/routertools.netrec.inet ]]; then
+            local inetcheck=1
+    fi
 
 	if [[ $inetcheck -gt 0 ]]; then
 		return 1
-                rm /dev/shm/routertools.netrec.inet 2>/dev/null
-                kill $ping_pid 2>/dev/null
+            rm /dev/shm/routertools.netrec.inet 2>/dev/null
+            kill $ping_pid 2>/dev/null
 		else
-		echo "External addresses are reachable."
-		rm /dev/shm/routertools.netrec.inet 2>/dev/null
-                kill $ping_pid 2>/dev/null
-                return 0
-                
+            echo "External addresses are reachable."
+            rm /dev/shm/routertools.netrec.inet 2>/dev/null
+            kill $ping_pid 2>/dev/null
+            
+            return 0
 	fi
 	
 }
 
 # Checks if the internet-facing interface is up
 get_inet_iface_status(){
+
 	local istatus=$(netstat -i | awk '{print $1;}' | grep -vE "Kernel|Iface" | grep -w "$inet_iface" | wc -l)
 	
 	if [[ $istatus -gt 0 ]]; then
@@ -1538,24 +1711,29 @@ get_inet_iface_status(){
 		echo "Interface $inet_iface is down."
 		return 1
 	fi
+
 }
 
 # Display services status
 status_services(){
+
 	for i in $important_services; do 
 		systemctl --no-pager 2>&1 | grep -iF $i
 	done
+
 }
 
 # Check and display wifi AP status
 status_wifi(){
+
 if [[ $@ == "" ]]; then
-ifaces="$(get_wifi_iface_list)"
+    ifaces="$(get_wifi_iface_list)"
 else
-ifaces="$@"
+    ifaces="$@"
 fi
 
 for i in $ifaces; do
+
 	echo "Probing AP $i status..."
 	local is_on=$(netstat -i | grep -c "$i")
 	local is_ap=$(iw "$i" info | grep -i type | grep -ic 'AP')	
@@ -1573,47 +1751,56 @@ for i in $ifaces; do
 	fi
 	
 	if get_hostapd_status $i; then
-	echo "Hostapd is up for interface $i."
+        echo "Hostapd is up for interface $i."
 	else
         echo "Hostapd is NOT online for interface $i."
 	fi
+
 done
+
 }
 
 # Info dump on queue disciplines
 info_qdisc(){
+    
 	echo "Dumping info on qdisc and SQM"
 	tc qdisc
+
 }
 
 # Info dump on wireless AP
 info_wifi(){
+
 if [[ $@ == "" ]]; then
-ifaces="$(get_wifi_iface_list)"
+    ifaces="$(get_wifi_iface_list)"
 else
-ifaces="$@"
+    ifaces="$@"
 fi
 
 	for i in $ifaces; do
-	getphy $i
-	echo "Dumping wireless info on interface $i"
-	echo "# iw phy info #"
-	iw phy$phy info
-	echo "# iw dev info #"
-	iw dev $i info
-	echo "# netstat -i #"
-	netstat -i	
+        getphy $i
+        echo "Dumping wireless info on interface $i"
+        echo "# iw phy info #"
+        iw phy$phy info
+        echo "# iw dev info #"
+        iw dev $i info
+        echo "# netstat -i #"
+        netstat -i	
 	done
+
 }
 
 # Info dump on internet interface
 info_internet(){
+
 	echo "Dumping info on internet interface"
 	ifconfig $inet_iface
+
 }
 
 # Check and fix internet availability   
 check_internet(){
+    
 	checksu || crit_error "You must be root to do this!"
 	echo "Probing internet status..."
 
@@ -1638,58 +1825,52 @@ check_internet(){
 	local addr_dns_4="github.com"
 
 	if get_inet_iface_status >/dev/null; then
-	echo "Internet interface test: Online"
+        echo "Internet interface test: Online"
 	else
-	echo "Internet interface test: Offline"
-	bad_inet_iface=1
+        echo "Internet interface test: Offline"
+        bad_inet_iface=1
 	fi
-	sleep .33
 	
 	if get_inet_status "1.1.1.1" >/dev/null; then
-	echo "Internet availability test 1 (1.1.1.1): Online"
+        echo "Internet availability test 1 (1.1.1.1): Online"
 	else
-	echo "Internet availability test 1 (1.1.1.1): Offline"
-	bad_inet_1=1
+        echo "Internet availability test 1 (1.1.1.1): Offline"
+        bad_inet_1=1
 	fi
-	sleep .33
 
 	if get_inet_status "8.8.8.8" >/dev/null; then
-	echo "Internet availability test 2 (8.8.8.8): Online"
+        echo "Internet availability test 2 (8.8.8.8): Online"
 	else
-	echo "Internet availability test 2 (8.8.8.8): Offline"
-	bad_inet_2=1
+        echo "Internet availability test 2 (8.8.8.8): Offline"
+        bad_inet_2=1
 	fi
-	sleep .33
 	
 	if get_dns_status "$addr_dns_1" >/dev/null; then
-	echo "DNS availability test 1 ($addr_dns_1): Resolved"
+        echo "DNS availability test 1 ($addr_dns_1): Resolved"
 	else
-	echo "DNS availability test 1 ($addr_dns_1): Did not resolve"
-	bad_dns_1=1
+        echo "DNS availability test 1 ($addr_dns_1): Did not resolve"
+        bad_dns_1=1
 	fi
-	sleep .33
 	
     if get_dns_status "$addr_dns_2" >/dev/null; then
-	echo "DNS availability test 2 ($addr_dns_2): Resolved"
+        echo "DNS availability test 2 ($addr_dns_2): Resolved"
 	else
-	echo "DNS availability test 2 ($addr_dns_2): Did not resolve"
-	bad_dns_2=1
+        echo "DNS availability test 2 ($addr_dns_2): Did not resolve"
+        bad_dns_2=1
 	fi
-	sleep .33
 	
 	if get_dns_status "$addr_dns_3" >/dev/null; then
-	echo "DNS availability test 3 ($addr_dns_3): Resolved"
+        echo "DNS availability test 3 ($addr_dns_3): Resolved"
 	else
-	echo "DNS availability test 3 ($addr_dns_3): Did not resolve"
-	bad_dns_3=1
+        echo "DNS availability test 3 ($addr_dns_3): Did not resolve"
+        bad_dns_3=1
 	fi
-	sleep .33
 	
 	if get_dns_status "$addr_dns_4" >/dev/null; then
-	echo "DNS availability test 4 ($addr_dns_4): Resolved"
+        echo "DNS availability test 4 ($addr_dns_4): Resolved"
 	else
-	echo "DNS availability test 4 ($addr_dns_4): Did not resolve"
-	bad_dns_4=1
+        echo "DNS availability test 4 ($addr_dns_4): Did not resolve"
+        bad_dns_4=1
 	fi
 
 	if [[ $bad_dns_1 -eq 1 ]] && [[ $bad_dns_2 -eq 1 ]] && [[ $bad_dns_3 -eq 1 ]] && [[ $bad_dns_4 -eq 1 ]]; then
@@ -1702,31 +1883,30 @@ check_internet(){
 	
 	# Act on test results
 	if [[ $bad_inet -eq 1 ]] || [[ $bad_inet_iface -eq 1 ]]; then
-		echo "Internet is not reachable, attempting to reconnect"
+            echo "Internet is not reachable, attempting to reconnect"
 		if [[ $bad_inet -eq 1 ]]; then
-		echo "Reason: Could not reach external addresses"
-		reason_1="could not reach external addresses"
+            echo "Reason: Could not reach external addresses"
+            reason_1="could not reach external addresses"
 		fi
 
 		if [[ $bad_inet_iface -eq 1 ]]; then
-		echo "Reason: Internet interface is down"
-		reason_2="internet interface is down"
+            echo "Reason: Internet interface is down"
+            reason_2="internet interface is down"
 		fi
 
 		if [[ "$reason_1" == "" ]] && [[ "$reason_2" != "" ]]; then
-		rootnotify "Attempting to reconnect, $reason_2"
+            rootnotify "Attempting to reconnect, $reason_2"
 		fi
 
 		if [[ "$reason_2" == "" ]] && [[ "$reason_1" != "" ]]; then
-		rootnotify "Attempting to reconnect, reason_1"
+            rootnotify "Attempting to reconnect, reason_1"
 		fi
 
 		if [[ "$reason_1" != "" ]] && [[ "$reason_2" != "" ]]; then
-		rootnotify "Attempting to reconnect, $reason_1 and $reason_2"
+            rootnotify "Attempting to reconnect, $reason_1 and $reason_2"
 		fi
 		
 		stop_internet 
-		sleep .33
 		start_internet
 		else
 		echo "Internet interface is working normally"
@@ -1739,10 +1919,12 @@ check_internet(){
 		else
 		echo "DNS lookup is working normally"
 	fi
+
 }
 
 # Shorter, faster and less precise internet check with hardcoded values and returns 1 or 0
 check_inet_short(){
+	
 	local bad_dns_1=0
 	local bad_dns_2=0
 	local bad_dns_3=0
@@ -1760,7 +1942,7 @@ check_inet_short(){
 	export inet_check_timeout="3"
 	
 	if ! get_inet_iface_status >/dev/null; then
-	bad_inet_iface=1
+        bad_inet_iface=1
 	fi
 
 	if [[ $bad_inet_iface -eq 1 ]]; then
@@ -1768,11 +1950,11 @@ check_inet_short(){
 	fi
 	
 	if ! get_inet_status "1.1.1.1" >/dev/null; then
-	bad_inet_1=1
+        bad_inet_1=1
 	fi
 
 	if ! get_inet_status "8.8.8.8" >/dev/null; then
-	bad_inet_2=1
+        bad_inet_2=1
 	fi
 
 	if [[ $bad_inet_1 -eq 1 ]] && [[ $bad_inet_2 -eq 1 ]]; then
@@ -1780,19 +1962,19 @@ check_inet_short(){
 	fi
 	
 	if ! get_dns_status "$addr_dns_1" >/dev/null; then
-	bad_dns_1=1
+        bad_dns_1=1
 	fi
 	
     if ! get_dns_status "$addr_dns_2" >/dev/null; then
-	bad_dns_2=1
+        bad_dns_2=1
 	fi
 	
 	if ! get_dns_status "$addr_dns_3" >/dev/null; then
-	bad_dns_3=1
+        bad_dns_3=1
 	fi
 	
 	if ! get_dns_status "$addr_dns_4" >/dev/null; then
-	bad_dns_4=1
+        bad_dns_4=1
 	fi
 	
 	if [[ $bad_dns_1 -eq 1 ]] && [[ $bad_dns_2 -eq 1 ]] && [[ $bad_dns_3 -eq 1 ]] && [[ $bad_dns_4 -eq 1 ]]; then
@@ -1803,57 +1985,68 @@ check_inet_short(){
 
 # Start internet via user-made script
 start_internet(){
+
 	checksu || crit_error "You must be root to do this!"
 	echo "Running start-internet script at /etc/routertools.d/scripts/start-internet"
 	source /etc/routertools.d/scripts/start-internet || error "An error occourred while executing /etc/routertools.d/scripts/start-internet"
 	return $?
 	echo "Done running script."
+
 }
 
 # Stop internet via user-made script
 stop_internet(){
+
 	checksu || crit_error "You must be root to do this!"
 	echo "Running stop-internet script at /etc/routertools.d/scripts/start-internet"
 	source /etc/routertools.d/scripts/stop-internet || error "An error occourred while executing /etc/routertools.d/scripts/stop-internet"
 	return $?
 	echo "Done running script."
+
 }
 
 # Restart internet via user-made scripts
 restart_internet(){
+
 	checksu || crit_error "You must be root to do this!"
 	echo "Restarting internet"
 	echo "Running internet stop script"
 	source /etc/routertools.d/scripts/stop-internet || error "An error occourred while executing /etc/routertools.d/scripts/stop-internet"
-	sleep .33
 	echo "Running internet start script"
 	source /etc/routertools.d/scripts/start-internet || error "An error occourred while executing /etc/routertools.d/scripts/start-internet"
 	return $?
 	echo "Done running scripts."
+
 }
 
 # Restart all services in important_services
 restart_services(){
+
 	checksu || crit_error "You must be root to restart services!"
 	echo "Restarting important services"
 	for i in $important_services; do
 		echo "Restarting service $i"
 		systemctl restart "$i" || error "Service $i failed to start"
 	done
+
 }
 
 # Start all services in important_services
 start_services(){
+
 	checksu || crit_error "You must be root to start services!"
 	echo "Restarting important services"
+
 	for i in $important_services; do
 		echo "Starting service $i"
 		systemctl start "$i" || error "Service $i failed to start"
 	done
+
 }
 
 # Install optimized defaults to sysctl.conf
 sysctl_install(){
+
 	checksu || crit_error "You must be root to install new default options to sysctl!"
 	initfile /etc/sysctl.d/68-x86routertools.conf
 	local f="/etc/sysctl.d/68-x86routertools.conf"
@@ -1869,10 +2062,12 @@ sysctl_install(){
 	sysctl -p --system
 	
 	echo "Successfully installed and reloaded new sysctl configurations"
+
 }
 
 # Check and display internet availability
 status_internet(){
+
 	local bad=0
 	get_inet_iface_status || bad=1
 	get_inet_status || bad=1
@@ -1883,69 +2078,82 @@ status_internet(){
 		else
 		echo "Internet is working normally."
 	fi
+
 }
 
 # Clump together status functions
 status_all(){
+    
 if [[ $noclear != 1 ]]; then
     clear
 fi
+
 	echo "# status_internet #"
 	status_internet
 	echo "# status_wifi #"
 	status_wifi
 	echo "# status_services #"
 	status_services
+
 }
 
 # Clump together info functions
 info_all(){
+    
 if [[ $noclear != 1 ]]; then
     clear
 fi
+
 	echo "# info_internet #"
 	info_internet
 	echo "# info_wifi #"
 	info_wifi
 	echo "# info_qdisc #"
 	info_qdisc
+	
 }
 
 # Clump together check functions
 check_all(){
+    
 if [[ $noclear != 1 ]]; then
     clear
 fi
+
 	echo "# check_internet #"
 	check_internet
 	echo "# check_ap #"
 	check_ap
+	
 }
 
 # Restart specified wifi AP, or all APs
 restart_wifi_ap(){
+    
         echo "Restarting access point $1"
-        sleep .2
         ap_stop "$1"
         ap_start "$1"
-        sleep .2
-        echo "Done restarting access point."
+        
 }
 
 restart_inet(){
+    
 	echo "Using user scripts to restart internet access"
 	stop_internet
-	sleep .33
 	start_inetnet
+	
 }
 
 disown_all(){
+    
 while true; do
     disown 2>/dev/null || break
 done
+
 }
 
 editconf(){
+    
 	if [[ "$EDITOR" == "" ]]; then
 		EDITOR=nano
 	fi
@@ -1961,37 +2169,59 @@ editconf(){
 		else
 		crit_error "Access point $1 has no configuration file."  
 	fi
+	
 }
 
 # Display error count and exit
 _exit(){
+    
 returnvalue=$?
-echo "$@"
-echo "Finished running with $error_count errors, $crit_count critical."
-    # Disown everything
+
+# Echo back a 'reason' for the exit
+if [[ "$@" != "" ]]; then
+    echo "$@"
+fi
+
+if [[ $(jobs | wc -l) -gt 0 ]]; then
+
+    if [[ $disown_all_jobs -eq 1 ]]; then
     disown_all
+    echo "Finished running with $error_count errors, $crit_count critical."
+    exit $returnvalue
+    fi
+    
+echo "So far $error_count errors, $crit_count critical."
+echo "Background jobs are running..."
+wait
+fi
+
+echo "Finished running with $error_count errors, $crit_count critical."
 exit $returnvalue
+
 }
 
 # Count command line options and do some processing on them
 count_arg=0
 final_args=""
 _args=""
+disown_all_jobs=0
+
 for i in "$@"; do
 count_arg=$(($count_arg + 1))
     
     # Make concatenated options understandable by the case statement
     if [[ $i == -* ]] && [[ $i != --* ]]; then
-            for (( f=1; f<${#i}; f++ )); do
-            _args="${_args} -${i:$f:1}"
-            done
-        else
-        _args="$_args $i"
+        for (( f=1; f<${#i}; f++ )); do
+        _args="${_args} -${i:$f:1}"
+        done
+    else
+    _args="$_args $i"
     fi
     
 final_args=$(echo "$_args" | xargs)
 unset p
 unset i
+
 done
 
 if [[ $count_arg -eq 0 ]]; then
@@ -2001,79 +2231,169 @@ if [[ $count_arg -eq 0 ]]; then
         load_prefs
 fi
 
-# Test mode must not be inherited
-unset test_mode
-
 parse_cmdline(){
+
 for cmd_arg in "$@"; do
 case "$cmd_arg" in
+
+        # Command line - to - function
+        # -- and - options should come first
         -v|--version) POSIX_Version 
         shift;;
+        
         -V|--verbose) verbose=1
         shift;;
+        
         -F|--nofail) nofail=1
         shift;;
+        
         -q|--quiet) quiet=1
         shift;;
+        
         -C|--no-clear) noclear=1
         shift;;
+        
+        -Z) disown_all_jobs=1
+        shift;;
+        
         --help|-h) _Help
-        shift; exit 0;;
+        exit 0;;
 
-        # Actions
-		ENABLE_TESTMODE) test_mode=true; shift;;
-        info|i) info_all; shift;; 
-        status|s) status_all; shift;;    
-        check|c) check_all; shift;; 
-        list-aps|ap-list|la) get_wifi_iface_list; shift;; 
-        status-internet|inet|status-inet) status_internet; shift;; 
-        status-wifi|wifi) status_wifi "$2"; shift;; 
-        status-services|srv) status_services; shift;; 
-        start-internet|start-inet) start_internet; shift;; 
-        start-services) start_services; shift;; 
-        start-wifi) ap_start "$2"; _exit; shift;; 
-        stop-internet|stop-inet) stop_internet; shift;; 
-        stop-wifi) ap_stop "$2"; _exit; shift;; 
-        restart-services) restart_services; shift;; 
-        restart-wifi) restart_wifi_ap "$2" & disown; shift;; 
-        restart-internet|restart-inet) restart-internet; shift;; 
-        info-internet|iinet|info-inet) info_internet; shift;; 
-        info-wifi|iwifi) info_wifi "$2"; shift;; 
-        info-qdisc|iqdisc) info_qdisc; shift;; 
-        check-internet|cinet|check-inet) check_internet; shift;; 
-        check-wifi|cwifi|cap|check-ap) check_ap "$2"; shift;; 
-        qdisc-on|sqm-enable|enable-sqm|qdisc) sqm_enable; shift;; 
-        qdisc-off|sqm-disable|disable-sqm) sqm_disable; shift;; 
-        paprd-on) paprd_on "$2"; shift;; 
-        paprd-off) paprd_off "$2"; shift;;  
-        ani-on) ani_on "$2"; shift;;
-        ani-off) ani_off "$2"; shift;;
-        dynack-on) dynack_on "$2"; shift;; 
-        dynack-off) dynack_off "$2"; shift;; 
-        lnamix-on) lnamix_on "$2"; shift;; 
-        lnamix-off) lnamix_off "$2"; shift;; 
-        calib|ath9k-recalibrate) ath9k_recalibrate "$2"; shift;;
-        sysctl-install) sysctl_install; shift;; 
-        reset-config|reset-cfg) resetcfg; shift;;
-        powersave-on) powersave_on "$2"; shift;; 
-        powersave-off) powersave_off "$2"; shift;;       
-        display-ani) display_ani "$2"; _exit; shift;;
-        display-rates) display_rates "$2" "$3"; _exit; shift;;
-        display-airtime) display_airtime "$2" "$3"; _exit; shift;;
-        display-devices|display-local-network) display_local_network; _exit; shift;;
-        display-qdisc) display_qdisc "$2"; _exit; shift ;;
-        list-devices|ls|show-local-network) show_local_network; shift;;
-		test-notify) rootnotify "$2"; shift;;
-		edit-config|edit|conf) editconf "$2"; shift;;
-        *) 
-		if [[ "$test_mode" == "true" ]]; then
-		${1}; exit $?
-		else
-        Invalid_Help; shift
-        fi
-        ;;
+        info|i) info_all 
+        shift;; 
+        
+        status|s) status_all
+        shift;;    
+        
+        check|c) check_all
+        shift;; 
+
+        list-aps|ap-list|la) get_wifi_iface_list
+        shift;; 
+        
+        status-internet|inet|status-inet) status_internet
+        shift;; 
+        
+        status-wifi|wifi) status_wifi "$2"
+        shift;; 
+        
+        status-services|srv) status_services
+        shift;; 
+        
+        start-internet|start-inet) start_internet
+        shift;; 
+        
+        start-services) start_services
+        shift;; 
+        
+        start-wifi) ap_start "$2"
+        _exit;; 
+        
+        stop-internet|stop-inet) stop_internet
+        shift;; 
+       
+        stop-wifi) ap_stop "$2"
+        _exit;; 
+        
+        restart-services) restart_services
+        shift;; 
+        
+        restart-wifi) restart_wifi_ap "$2"
+        shift;; 
+        
+        restart-internet|restart-inet) restart-internet
+        shift;; 
+        
+        info-internet|iinet|info-inet) info_internet
+        shift;; 
+        
+        info-wifi|iwifi) info_wifi "$2"
+        shift;; 
+        
+        info-qdisc|iqdisc) info_qdisc
+        shift;; 
+        
+        check-internet|cinet|check-inet) check_internet
+        shift;; 
+        
+        check-wifi|cwifi|cap|check-ap) check_ap "$2"
+        shift;; 
+        
+        qdisc-on|sqm-enable|enable-sqm|qdisc) sqm_enable
+        shift;; 
+        
+        qdisc-off|sqm-disable|disable-sqm) sqm_disable 
+        shift;; 
+        
+        paprd-on) paprd_on "$2"
+        shift;; 
+        
+        paprd-off) paprd_off "$2"
+        shift;;  
+        
+        ani-on) ani_on "$2"
+        shift;;
+        
+        ani-off) ani_off "$2"
+        shift;;
+        
+        dynack-on) dynack_on "$2"
+        shift;; 
+        
+        dynack-off) dynack_off "$2"
+        shift;; 
+        
+        lnamix-on) lnamix_on "$2"
+        shift;; 
+        
+        lnamix-off) lnamix_off "$2"
+        shift;; 
+        
+        calib|ath9k-recalibrate) ath9k_recalibrate "$2" 
+        shift;;
+        
+        sysctl-install) sysctl_install 
+        shift;; 
+        
+        reset-config|reset-cfg) resetcfg 
+        shift;;
+        
+        powersave-on) powersave_on "$2" 
+        shift;; 
+        
+        powersave-off) powersave_off "$2" 
+        shift;;       
+        
+        display-ani) display_ani "$2" 
+        _exit;;
+        
+        display-rates) display_rates "$2" "$3"
+        _exit;;
+        
+        display-airtime) display_airtime "$2" "$3"
+        _exit;;
+        
+        display-devices|display-local-network) display_local_network
+        _exit;;
+        
+        display-qdisc) display_qdisc "$2"
+        _exit;;
+        
+        list-devices|ls|show-local-network) show_local_network 
+        shift;;
+		
+		test-notify) rootnotify "$2" 
+        shift;;
+		
+		edit-config|edit|conf) editconf "$2" 
+        shift;;
+        
+        *) Invalid_Help 
+        shift;;
+
 esac
 done
+
 }
 
 # Execute commands
@@ -2082,6 +2402,8 @@ parse_cmdline ${final_args}
 # Handle return value and errors
 if [[ $count_arg -ne 0 ]]; then
     if [[ $quiet != 1 ]]; then
-    echo "Finished running with $error_count errors, $crit_count critical."
+    _exit
     fi
+else
+exit $?
 fi

@@ -1137,16 +1137,18 @@ done
 ifv tc qdisc
 
 if [[ "$enable_bbr" == "true" ]]; then
+    
+    if [[ $(sysctl net.ipv4.tcp_congestion_control | grep -i bbr | wc -l) -eq 0 ]]; then
 
-	if [[ "$(sysctl net.ipv4.tcp_congestion_control | grep -iF bbr2 | wc -l)" -eq 0 ]]; then
-        echo "Enabled BBRv2 congestion control."
-        sysctl net.ipv4.tcp_congestion_control=bbr2
-            elif [[ "$(sysctl net.ipv4.tcp_congestion_control | grep -iF bbr | wc -l)" -eq 0 ]]; then
-                echo "Enabled BBRv1 congestion control, since your kernel does not have BBRv2 yet."
-    else
-        echo "Your kernel does not support either BBRv1 or BBRv2. Keeping default congestion control."
+        if [[ "$(sysctl net.ipv4.tcp_allowed_congestion_control | grep -iF bbr2 | wc -l)" -gt 0 ]]; then
+            echo "Enabled BBRv2 congestion control."
+            sysctl net.ipv4.tcp_congestion_control=bbr2
+                elif [[ "$(sysctl net.ipv4.tcp_allowed_congestion_control | grep -iF bbr | wc -l)" -gt 0 ]]; then
+                    echo "Enabled BBRv1 congestion control."
+        else
+            echo "Your kernel does not support either BBRv1 or BBRv2, or the modules aren't loaded. Keeping default congestion control."
+        fi
 	fi
-	
 fi
 
 }

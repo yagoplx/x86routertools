@@ -20,7 +20,7 @@ It can check and automatically start up hostapd with your custom configurations,
 
 `* * * * * routertools check-wifi`     <-- checks and restarts AP if interface down or hostapd down       
 
-`* * * * * routertools check-inet`     <-- checks and restarts internet if its interface is down
+`* * * * * routertools check-inet`     <-- checks and restarts internet if its interface is down      
 
 **Along with checking if the network is live, it can also be configured to send a warning to TTY or X11 desktop about the problem.** Though, it will attempt to solve the issue on its own if properly set up. (by restarting things, it can't fix the likes of a snapped cable)     
 
@@ -32,15 +32,15 @@ If you don't like the idea, you can also use it as a systemd service with the in
 
 From the source folder, do:      
 
-`sudo cp systemd/* /etc/systemd/system/`
+`sudo cp systemd/* /etc/systemd/system/`    
 
-`sudo systemctl daemon-reload`
+`sudo systemctl daemon-reload`    
 
 Then activate the services, like this, once you're done configuring:
 
-`sudo systemctl enable --now routertoolsd-inet`
+`sudo systemctl enable --now routertoolsd-inet`      
 
-`sudo systemctl enable --now routertoolsd-wifi@INTERFACE_NAME`
+`sudo systemctl enable --now routertoolsd-wifi@INTERFACE_NAME`    
 
 **Configuration is done via text file editing, you can find every relevant option in folder /etc/routertools.d/**     
 
@@ -64,7 +64,7 @@ System Requirements:
 `netstat`        
 `iw`     
 `ifconfig`           
-`hostapd`
+`hostapd`        
 
 x86routertools is free software licensed under the GPLv3.         
 

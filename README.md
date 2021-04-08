@@ -18,9 +18,9 @@ It can check and automatically start up hostapd with your custom configurations,
 `* * * * * routertools check-wifi`     <-- checks and restarts AP if interface down or hostapd down       
 `* * * * * routertools check-inet`     <-- checks and restarts internet if its interface is down
 
-**Along with checking if the network is live, it can also be configured to send a warning to TTY or X11 desktop about the problem.** Though, it will attempt to solve the issue on its own if properly set up. (by restarting things, it can't fix the likes of a snapped cable)  
+**Along with checking if the network is live, it can also be configured to send a warning to TTY or X11 desktop about the problem.** Though, it will attempt to solve the issue on its own if properly set up. (by restarting things, it can't fix the likes of a snapped cable)     
 
-It can check and automatically set up Cake SQM (+ BBRv1/v2) on new network interfaces, to pretty much nullify bufferbloat. It does this best as a crontab watchdog, and categorizes network interfaces in profiles, some configurable with traffic shaping. This is similar to what sqm-scripts does, but the code is different:
+It can check and automatically set up Cake SQM (+ BBRv1/v2) on new network interfaces, to pretty much nullify bufferbloat. It does this best as a crontab watchdog, and categorizes network interfaces in profiles, some configurable with traffic shaping. This is similar to what sqm-scripts does, but the code is different:      
 `* * * * * routertools qdisc`    
 
 If you don't like the idea, you can also use it as a systemd service with the included service files:     

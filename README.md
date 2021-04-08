@@ -58,19 +58,13 @@ A valid profile has two files:
 
 `/etc/routertools.d/wifi-access-points/[interface_name]_hostapd.conf` <-- your custom hostapd.conf    
 
-**System Requirements:      
-
+System Requirements:      
 `An AP capable network adapter (Preferably ath9k)`     
-
 `systemd`        
-
 `netstat`        
-
 `iw`     
-
 `ifconfig`           
-
-`hostapd`**
+`hostapd`
 
 x86routertools is free software licensed under the GPLv3.         
 

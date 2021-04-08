@@ -27,9 +27,17 @@
 #    https://www.bufferbloat.net/projects/bloat/wiki/                             #
 ###################################################################################
 
-# Initialize variables and language setting for compat
+trap_ctl(){
+    # Clean up our trash and quit if the user does CTRL+C
+    cleanup 2>/dev/null
+}
+
+# Initialize trap
+trap 'trap_ctl' SIGINT SIGTERM
+
+# Initialize variables and language setting for compatibility
 LANG=C
-version="1.2.10"
+version="1.2.11"
 error_count=0
 crit_count=0
 crit_add=0
@@ -38,112 +46,103 @@ crit_add=0
 alias _error=error
 alias check_iface_exist=check_iface_exists
 
-# Define functions
-_Version(){
+Version(){
     
         echo "x86routertools v$version"
         
 }
 
-POSIX_Version(){
+Copyright(){
     
         echo "Copyright (C) 2021 Yago Mont' Alverne"
-        _Version
+        Version
 
 }
 
 # Descriptive help function
-_Help(){
+Help(){
     
-        echo "Usage: x86routertools [ACTION] (OPTIONS)"
-        echo
-        echo "Actions ->"
-	    echo "  edit [AP]		  edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
-        echo "  status-internet, inet     checks if internet access is present and exits"
-        echo "  status-wifi, wifi {AP}    checks if the wifi AP(s) is/are up and running and exits"
-        echo "  status-services, srv      checks if important services are running and exits"
-        echo "  status, s                 shows a shortened version of all statuses"
-        echo
-        echo "  ap-list, list-aps, la     shows a list of all AP names in routertools"
-        echo "  info-internet, iinet      shows information about the default route (internet)"
-        echo "  info-wifi, iwifi {AP}     shows information about the wifi APs"
-        echo "  info-services, isrv       shows all important services status verbosely"
-        echo "  info-qdisc, iqdisc        shows all configured queue disciplines"
-        echo "  info, i                   shows a shortened version of all information commands"
-        echo 
+        echo "Usage: x86routertools [ARGUMENTS]"
+        echo "Arguments preceded by an asterisk(*) might not work outside of ath9k devices"
+        echo "[] indicates a necessary argument. {} indicates an optional one."
+        echo "List of arguments:"
+        echo ""
+	    echo "  edit [AP]		           edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
+        echo "  status-internet, inet      checks if internet access is present and exits"
+        echo "  status-wifi, wifi {AP}     checks if the wifi AP(s) is/are up and running and exits"
+        echo "  status-services, srv       checks if important services are running and exits"
+        echo "  status, s                  shows a shortened version of all statuses"
+        echo "  ap-list, list-aps, la      shows a list of all AP names in routertools"
+        echo "  info-internet, iinet       shows information about the default route (internet)"
+        echo "  info-wifi, iwifi {AP}      shows information about the wifi APs"
+        echo "  info-services, isrv        shows all important services status verbosely"
+        echo "  info-qdisc, iqdisc         shows all configured queue disciplines"
+        echo "  info, i                    shows a shortened version of all information commands"
         echo "* display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution, requires the MAC address" 
         echo "* display-airtime [AP] [MAC] displays airtime usage for a given device, requires MAC address, 100ms resolution"
         echo "* display-ani [AP]           displays runtime info about Adaptive Noise Immunity, 100ms resolution"
         echo "  display-local-network      displays all connected devices to this machine (ARP), 1s resolution"
         echo "  display-qdisc [interface]  displays queue discipline statistics for the given interface, 100ms resolution"
         echo "  show-local-network, ls     show all connected devices to this machine, once"
-        echo
-        echo "  Check-type actions best used in a crontab:"
-        echo "  check-internet            checks and runs start-internet script if connection unavailable, checks if DNS is working and jumpstarts it"
-        echo "  check-wifi {AP}           checks and restarts the wifi AP(s) if not started"
-        echo "  check, c                  checks both (all) wifi APs and internet, starts them automatically"
-        echo
-        echo "  start-internet            runs the start-internet script"
-        echo "  stop-internet             runs the stop-internet script"
-        echo "  start-services            starts inactive important services"
-        echo "  start-wifi {AP}           (re)starts selected AP or all APs"
-        echo "  stop-wifi {AP}            stops selected AP or all APs"
-        echo "  restart-services          restarts important services"
-        echo "  restart-wifi {AP}         restarts the selected AP or all APs"
+        echo "  check-internet             checks and runs start-internet script if connection unavailable, checks if DNS is working and jumpstarts it"
+        echo "  check-wifi {AP}            checks and restarts the wifi AP(s) if not started"
+        echo "  check, c                   checks both (all) wifi APs and internet, starts them automatically"
+        echo "  start-internet             runs the start-internet script"
+        echo "  stop-internet              runs the stop-internet script"
+        echo "  start-services             starts inactive important services"
+        echo "  start-wifi {AP}            (re)starts selected AP or all APs"
+        echo "  stop-wifi {AP}             stops selected AP or all APs"
+        echo "  restart-services           restarts important services"
+        echo "  restart-wifi {AP}          restarts the selected AP or all APs"
         echo "  restart-internet"
-        echo
-        echo "  Performance-oriented actions:"
-        echo "  qdisc-on, qdisc           apply routertools's per-category queue disciplines"
-        echo "  qdisc-off                 return queue disciplines to the system defaults"
-        echo "  sysctl-install            installs optimized options to /etc/sysctl.d and reloads sysctl"
-        echo "* paprd-on {AP}             enables digital predistortion on all APs or on {AP} only"
-        echo "* paprd-off {AP}            disables digital predistortion on all APs or on {AP} only"
-        echo "  dynack-on {AP}            enables ack timeout estimation on all APs or on {AP} only"
-        echo "  dynack-off {AP}           disables ack timeout estimation on all APs or on {AP} only"
-        echo "* ani-on {AP}               enables adaptive noise immunity on all APs or on {AP} only"
-        echo "* ani-off {AP}              disables adaptive noise immunity on all APs or on {AP} only"
-        echo "* lnamix-on {AP}            enables low noise amplifier signal mixing on all APs or on {AP} only"
-        echo "* lnamix-off {AP}           disables low noise amplifier signal mixing on all APs or on {AP} only"
-	    echo "* ath9k-recalibrate {AP}    recalibrates paprd & ani on atheros cards, best used in a cron job"
-        echo "  powersave-on {AP}         enables power saving features on all APs or on {AP} only"
-        echo "  powersave-off {AP}        disables power saving features on all APs or on {AP} only"
-        echo "  reset-config, reset-cfg   resets x86routertools configuration files to default"
-        echo
-        echo "NOTE: Actions and options preceded by an asterisk(*) might not work outside of ath9k devices"
-        echo
-        echo "Options ->"
-        echo " -h, --help                 show this help and quit"
-        echo " -v, --version              show version info and quit"
-        echo " -q, --quiet                silence some routertools dialog to make output better to parse"
-        echo " -V, --verbose              operate verbosely"
-        echo " -F, --nofail               keep going even if a critical error happens"
-        echo " -C, --noclear              never clear the screen"
-        echo " -Z                         disown all jobs on exit"
+        echo "  qdisc-on, qdisc            apply routertools's per-category queue disciplines"
+        echo "  qdisc-off                  return queue disciplines to the system defaults"
+        echo "  sysctl-install             installs optimized options to /etc/sysctl.d and reloads sysctl"
+        echo "* paprd-on {AP}              enables digital predistortion on all APs or on {AP} only"
+        echo "* paprd-off {AP}             disables digital predistortion on all APs or on {AP} only"
+        echo "  dynack-on {AP}             enables ack timeout estimation on all APs or on {AP} only"
+        echo "  dynack-off {AP}            disables ack timeout estimation on all APs or on {AP} only"
+        echo "* ani-on {AP}                enables adaptive noise immunity on all APs or on {AP} only"
+        echo "* ani-off {AP}               disables adaptive noise immunity on all APs or on {AP} only"
+        echo "* lnamix-on {AP}             enables low noise amplifier signal mixing on all APs or on {AP} only"
+        echo "* lnamix-off {AP}            disables low noise amplifier signal mixing on all APs or on {AP} only"
+	    echo "* ath9k-recalibrate {AP}     recalibrates paprd & ani on atheros cards, best used in a cron job"
+        echo "  powersave-on {AP}          enables power saving features on all APs or on {AP} only"
+        echo "  powersave-off {AP}         disables power saving features on all APs or on {AP} only"
+        echo "  reset-config, reset-cfg    resets x86routertools configuration files to default"
+        echo ""
+        echo "  --daemon [AP]              starts the check/watchdog daemon for the selected AP. Please only use this in a (systemd) service"
+        echo "  --daemon-stop [AP]         stops the check/watchdog daemon for the selected AP"
+        echo "  --daemon-inet              starts the check/watchdog daemon for the internet interface. Please only use this in a (systemd) service"
+        echo "  --daemon-stop-inet         stops the check/watchdog daemon for the internet interface"
+        echo "  --list-daemons             lists active daemons and PIDs"
+        echo "  -h, --help                 show this help and quit"
+        echo "  -v, --version              show version info and quit"
+        echo "  -q, --quiet                silence some routertools dialog to make output better to parse"
+        echo "  -V, --verbose              operate verbosely"
+        echo "  -F, --nofail               keep going even if a critical error happens"
+        echo "  -C, --noclear              never clear the screen"
+        echo "  -D                         when combined with --daemon or --daemon-inet, runs these as detached processes. for use outside systemd"
+        echo "  -Z                         disown all jobs on exit"
+        
 }
 
 # Short help function
 Invalid_Help(){
     
         if [[ $count_arg -eq 1 ]]; then
-            _Help
+            Help
             echo
             echo "x86routertools: Invalid command line option $cmd_arg"
+            exit 1
                 elif [[ $count_arg -gt 1 ]]; then
                     echo "x86routertools: Invalid command line option $cmd_arg"
                     echo "Run 'x86routertools -h' for help."
+                    exit 1
         fi
         
-        exit 1
         
 }
-
-trap_ctl(){
-    # Clean up our junk and quit if the user does CTRL+C
-    cleanup
-}
-
-# Initialize trap
-trap 'trap_ctl' SIGINT
 
 cleanup(){
 
@@ -152,6 +151,8 @@ cleanup(){
 
         if [[ $quiet != 1 ]]; then
             _exit "x86routertools was terminated by the user."
+            else
+            exit 0
         fi
 
 }
@@ -263,6 +264,7 @@ unset x
 
 rm -r /etc/routertools.d
 initfs
+initfs_daemon_cfg
 return $?
 }
 
@@ -270,13 +272,15 @@ initfs(){
     
 # Initialize folders and populate config files
 
+checksu || crit_error "Cannot create configuration, please try again as root."
+
 if [[ ! -d /dev/shm/x86routertools ]]; then
-    mkdir /dev/shm/x86routertools || crit_error "Creating folder failed! You probably aren't root, please try again as root."
+    mkdir /dev/shm/x86routertools || crit_error
 fi
 
 if [[ ! -d /etc/routertools.d ]]; then
     echo "Attempting to create /etc/routertools.d"
-    mkdir /etc/routertools.d || crit_error "Creating folder failed! You probably aren't root, please try again as root."
+    mkdir /etc/routertools.d || crit_error
     echo "Creating basic directory structure in /etc/routertools.d"
     mkdir /etc/routertools.d/wifi-access-points
     mkdir /etc/routertools.d/scripts
@@ -317,6 +321,11 @@ if [[ ! -d /etc/routertools.d ]]; then
 
         f="$d/x86routertools.conf"
         echo "# x86routertools main configuration file" >> $f
+        echo "" >> $f
+        echo "# use_logger -> a boolean." >> $f
+        echo "# if true, the script will try to use logger to send messages to the system log." >> $f
+        echo "# if you are running routertools in the crontab or via a systemd service, you don't need this." >> $f
+        echo "use_logger=false" >> $f
         echo "" >> $f
         echo "# inet_iface -> the interface that will be checked by" >> $f
         echo "# internet commands, and started by internet scripts. example: enp2s0" >> $f
@@ -494,6 +503,46 @@ if [[ ! -d /etc/routertools.d ]]; then
         unset f
         unset d
 fi
+}
+
+initfs_daemon_cfg(){
+    
+    checksu || crit_error "Cannot create configuration, please try again as root."
+    
+    mkdir /etc/routertools.d 2>/dev/null
+    initfile /etc/routertools.d/daemon.conf
+    chmod og+xr /etc/routertools.d/daemon.conf
+    
+    f=/etc/routertools.d/daemon.conf
+    
+        echo "# x86routertools daemon mode configuration file" >> $f
+        echo "# these options are only valid for the --daemon command" >> $f
+        echo "" >> $f
+        echo "# daemon_manage_inet_every -> a number in seconds. the internet watchdog will be executed every this amount of time." >> $f
+        echo "daemon_manage_inet_every=30" >> $f
+        echo "" >> $f
+        echo "# daemon_manage_wifi_every -> a number in seconds. the wifi watchdog will be executed every this amount of time." >> $f
+        echo "daemon_manage_wifi_every=30" >> $f
+        echo "" >> $f
+        echo "# daemon_wifi_wait_for_internet_timeout -> a number in seconds." >> $f
+        echo "# if running in daemon mode and require_internet is enabled, after this long and internet is still not available wifi will be started anyway." >> $f
+        echo "# set to 0 if you really want to disable this" >> $f
+        echo "daemon_wifi_wait_for_internet_timeout=30" >> $f
+        echo "" >> $f
+    
+    unset f
+}
+
+send_to_syslog(){
+        
+        [[ "$use_logger" == "false" ]] && return 0
+        
+        # Return 0 since this is optional
+        command -v logger > /dev/null || return 0
+        
+        # Don't block thread on access to syslog
+        logger "$@" &
+
 }
 
 # Checks if value is a valid boolean (script uses lowercase)
@@ -1192,8 +1241,21 @@ load_prefs_error(){
         echo "I'm going to generate them now."
         rm -r /etc/routertools.d
         initfs
+        [[ -f /etc/routertools.d/daemon.conf ]] && _exit "Done. Try running x86routertools again."
     fi
 
+}
+
+load_prefs_daemon_error(){
+
+	if [[ -f /etc/routertools.d/daemon.conf ]]; then
+	crit_error "Syntax error on /etc/routertools.d/daemon.conf, cannot continue."
+	else
+	echo "Generating new daemon.conf in /etc/routertools.d/ ..."
+	initfs_daemon_cfg
+	_exit "Done. Try running x86routertools again."
+	fi
+    
 }
 
 # Load contents of routertools options files
@@ -1201,6 +1263,7 @@ load_prefs(){
     
         set -a
         source /etc/routertools.d/x86routertools.conf || load_prefs_error
+        source /etc/routertools.d/daemon.conf || load_prefs_daemon_error
 
 }
 
@@ -1268,7 +1331,7 @@ for i in $wifi_ap_interfaces; do
         check_iface_exists $i
         load_prefs_iface $i
 
-		if [[ "$require_internet" == "true" ]]; then
+		if [[ "$require_internet" == "true" ]] && [[ $IS_DAEMON -ne 1 ]]; then
 			echo "Internet requirement is enabled, checking connectivity"
 			
 			if check_inet_short; then
@@ -2174,6 +2237,194 @@ editconf(){
 	
 }
 
+daemon_term(){
+    
+    # types inet wifi
+    rm /dev/shm/routertools_pid_$daemon_type 2>/dev/null
+    kill "$daemon_child_pid" 2>/dev/null
+    kill -9 "$sleep_pid" 2>/dev/null
+    _exit
+    
+}
+
+daemon_inet(){
+    
+    export daemon_type="inet"
+        
+    if ps -p $(cat /dev/shm/routertools_pid_$daemon_type) > /dev/null 2>&1; then
+        crit_error "There is an instance of this daemon already running."
+    fi
+    
+    export daemon_pid=$BASHPID
+    export daemon_child_pid=""
+    GRACE_PERIOD=0
+    export IS_DAEMON=1
+    
+    echo $daemon_pid > /dev/shm/routertools_pid_$daemon_type
+    chmod og+xr /dev/shm/routertools_pid_$daemon_type
+    trap daemon_term SIGTERM SIGINT
+    
+    # In case of unset variable
+    if [[ $daemon_manage_inet_every -eq $daemon_manage_inet_every ]]; then
+        true
+        else
+        daemon_manage_inet_every=30
+    fi
+    
+    while true; do
+    
+    if ps -p $daemon_child_pid > /dev/null 2>&1; then
+        if [[ $GRACE_PERIOD_BLOCK -eq 1 ]]; then
+            GRACE_PERIOD=0
+            else
+            GRACE_PERIOD=1
+        fi
+    else
+        GRACE_PERIOD=0
+    fi
+    
+    if [[ $GRACE_PERIOD -eq 1 ]]; then
+        GRACE_PERIOD=0
+        GRACE_PERIOD_BLOCK=1
+    else
+        check_internet & 
+        daemon_child_pid=$!
+        [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+        export daemon_child_pid=$daemon_child_pid
+        GRACE_PERIOD_BLOCK=0
+    fi
+    
+    # Don't block signals on sleep
+    sleep $daemon_manage_inet_every &
+    sleep_pid=$!
+    wait $sleep_pid 2>/dev/null
+    kill -9 $sleep_pid 2>/dev/null
+    
+    done
+    
+}
+
+
+daemon_wifi(){
+    check_iface_exists "$1" || crit_error "Interface $1 is not configured in /etc/routertools.d"
+    
+    if ps -p $(cat /dev/shm/routertools_pid_$1) > /dev/null 2>&1; then
+        crit_error "There is an instance of this daemon already running."
+    fi
+    
+    export daemon_type="$1"
+    export daemon_pid=$BASHPID
+    export daemon_child_pid=""
+    GRACE_PERIOD=0
+    CLEAR=1
+    export IS_DAEMON=1
+    
+    echo $daemon_pid > /dev/shm/routertools_pid_$daemon_type
+    chmod og+xr /dev/shm/routertools_pid_$daemon_type
+    trap daemon_term SIGTERM SIGINT
+    
+    # In case of unset variable
+    if [[ $daemon_manage_wifi_every -eq $daemon_manage_wifi_every ]]; then
+        true
+        else
+        daemon_manage_wifi_every=30
+    fi
+    
+    while true; do
+    
+    if ps -p $daemon_child_pid > /dev/null 2>&1; then
+        if [[ $GRACE_PERIOD_BLOCK -eq 1 ]]; then
+            GRACE_PERIOD=0
+            else
+            GRACE_PERIOD=1
+        fi
+    else
+        GRACE_PERIOD=0
+    fi
+    
+    if [[ $GRACE_PERIOD -eq 1 ]]; then
+        GRACE_PERIOD=0
+        GRACE_PERIOD_BLOCK=1
+    else
+        
+        if [[ $require_internet == true ]] && [[ $daemon_wifi_wait_for_internet_timeout -eq $daemon_wifi_wait_for_internet_timeout ]]; then
+            if check_inet_short; then
+                CLEAR=1
+                else
+                CLEAR=0
+                GRACE_PERIOD=0
+                GRACE_PERIOD_BLOCK=1
+            fi
+        fi
+        
+        if [[ $CLEAR -ne 0 ]]; then
+            check_ap "$1" &
+            [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+            daemon_child_pid=$!
+            export daemon_child_pid=$daemon_child_pid
+            GRACE_PERIOD_BLOCK=0
+        fi
+    fi
+    
+    # Don't block signals on sleep
+    sleep $daemon_manage_wifi_every &
+    sleep_pid=$!
+    wait $sleep_pid 2>/dev/null
+    kill -9 $sleep_pid 2>/dev/null
+    
+    done
+    
+}
+
+
+stop_daemon(){
+
+daemon_type="$1"
+d_pid=$(cat /dev/shm/routertools_pid_$daemon_type)
+
+if ps -p $d_pid > /dev/null 2>&1; then
+    kill $d_pid
+    rm /dev/shm/routertools_pid_$daemon_type
+    _exit Stopped daemon $daemon_type with pid $d_pid
+else
+    crit_error "Daemon for $daemon_type wasn't running in the first place."
+fi
+
+}
+
+stop_daemon_inet(){
+
+    stop_daemon inet
+    
+}
+
+stop_daemon_wifi(){
+    
+    check_iface_exists $1 || crit_error "Interface $1 is not configured in /etc/routertools.d"
+    stop_daemon $1
+    
+}
+
+list_daemons(){
+    
+    echo "x86routertools processes running in background:"
+    for i in $(find /dev/shm/* | grep '/dev/shm/routertools_pid_'); do
+    
+    
+    if [[ $i != "" ]]; then
+        daemon_type=$(echo $i | sed 's/\/dev\/shm\/routertools_pid_//g')
+        daemon_pid=$(cat $i)
+        if ps -p $daemon_pid > /dev/null 2>&1; then
+        echo "$daemon_type - PID: $daemon_pid"
+        else
+        rm $i 2>/dev/null
+        fi
+    fi
+    
+    done
+    exit 0
+}
+
 # Display error count and exit
 _exit(){
     
@@ -2192,8 +2443,7 @@ if [[ $(jobs | wc -l) -gt 0 ]]; then
     exit $returnvalue
     fi
     
-echo "So far $error_count errors, $crit_count critical."
-echo "Background jobs are running..."
+echo "Waiting for background jobs to finish..."
 wait
 fi
 
@@ -2227,10 +2477,16 @@ unset i
 done
 
 if [[ $count_arg -eq 0 ]]; then
-        _Version
+
+        Version
         echo "No command given, run 'x86routertools -h' for usage."
         else
-        load_prefs
+        if [[ "$@" == "-h" ]] || [[ "$@" == "--help" ]]; then
+            true
+        else
+            load_prefs
+        fi
+        
 fi
 
 parse_cmdline(){
@@ -2240,7 +2496,7 @@ case "$cmd_arg" in
 
         # Command line - to - function
         # -- and - options should come first
-        -v|--version) POSIX_Version 
+        -v|--version) Copyright 
         shift;;
         
         -V|--verbose) verbose=1
@@ -2258,7 +2514,72 @@ case "$cmd_arg" in
         -Z) disown_all_jobs=1
         shift;;
         
-        --help|-h) _Help
+        -D) no_service=1
+        shift;;
+        
+        --daemon) checksu || crit_error "You must be root to do this!"
+        
+        if [[ $RT_DAEMONIZE -ne 1 ]]; then
+            if [[ $no_service -eq 1 ]]; then
+                # Always use logger here
+                echo "Running with -D. Process will detach from parent and logger will be used unconditionally."
+                export RT_DAEMONIZE=1
+                
+                $0 --daemon $2 >/dev/null & disown
+                _exit Dispatched daemon process.
+            else
+                if [[ "$use_logger" == "true" ]]; then
+                    exec 1> >(logger -s -t $(basename $0)) 2>&1
+                fi
+                echo "Running without -D. Process will not detach from parent (systemd mode)."
+                daemon_wifi $2
+            fi
+        else
+        exec 1> >(logger -s -t $(basename $0)) 2>&1
+        daemon_wifi $2
+        fi
+        
+        shift;;
+        
+        
+        --daemon-list|daemon-list|list-daemons|--list-daemons) list_daemons
+        shift;;
+        
+        --daemon-stop-inet) checksu || crit_error "You must be root to do this!" 
+        stop_daemon_inet
+        shift;;
+        
+        --daemon-stop|--stop-daemon) checksu || crit_error "You must be root to do this!"
+        stop_daemon_wifi "$2"
+        shift;;
+        
+        --daemon-inet) checksu || crit_error "You must be root to do this!"
+       
+        if [[ $RT_DAEMONIZE -ne 1 ]]; then
+            if [[ $no_service -eq 1 ]]; then
+                # Always use logger here
+                echo "Running with -D. Process will detach from parent and logger will be used unconditionally."
+                export RT_DAEMONIZE=1
+                
+                $0 --daemon-inet $2 >/dev/null & disown
+                _exit Dispatched daemon process.
+            else
+                if [[ "$use_logger" == "true" ]]; then
+                    exec 1> >(logger -s -t $(basename $0)) 2>&1
+                fi
+                echo "Running without -D. Process will not detach from parent (systemd mode)."
+                daemon_inet $2
+            fi
+        else
+        exec 1> >(logger -s -t $(basename $0)) 2>&1
+        daemon_inet $2
+        fi
+        
+        shift;;
+        
+        
+        # Don't use fancy exit here
+        --help|-h) Help
         exit 0;;
 
         info|i) info_all 
@@ -2390,8 +2711,8 @@ case "$cmd_arg" in
 		edit-config|edit|conf) editconf "$2" 
         shift;;
         
-        *) Invalid_Help 
-        shift;;
+        *) Invalid_Help
+        exit 1;;
 
 esac
 done

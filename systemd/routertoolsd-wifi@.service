@@ -1,0 +1,12 @@
+[Unit]
+Description=x86routertools access point watchdog
+StartLimitBurst=5
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/bin/routertools --daemon %i
+LimitNPROC=64
+
+[Install]
+WantedBy=multi-user.target

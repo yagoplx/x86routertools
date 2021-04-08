@@ -6,7 +6,14 @@
 **Scripts for using any Linux PC with a capable WiFi NIC as a fully-fledged wireless access point.     
 Pretty much just glue, kind of like create_ap, but takes a different approach. You probably can't use this with NetworkManager.**     
 
-It can check and automatically start up hostapd with your custom configurations, making it very useful in cron jobs (as a watchdog):
+x86routertools can be installed by downloading the git repository and copying `routertools` to /usr/bin:     
+`sudo wget https://gitlab.com/yagocl/x86routertools/-/raw/master/routertools -O /usr/bin/routertools; sudo chmod og+xr /usr/bin/routertools`  
+  
+Then generating the base configuration files:        
+`sudo routertools reset-cfg`     
+
+
+It can check and automatically start up hostapd with your custom configurations, making it very useful in cron jobs (as a watchdog):    
 
 `* * * * * routertools check-wifi`     <-- checks and restarts AP if interface down or hostapd down       
 `* * * * * routertools check-inet`     <-- checks and restarts internet if its interface is down
@@ -16,11 +23,18 @@ It can check and automatically start up hostapd with your custom configurations,
 It can check and automatically set up Cake SQM (+ BBRv1/v2) on new network interfaces, to pretty much nullify bufferbloat. It does this best as a crontab watchdog, and categorizes network interfaces in profiles, some configurable with traffic shaping. This is similar to what sqm-scripts does, but the code is different:
 `* * * * * routertools qdisc`    
 
-It automates tedious tasks such as setting up NAT, ath9k settings, dynack, regdomain setting, ... and service restarting that cannot be done within hostapd.
-`sudo routertools start-wifi`     
+If you don't like the idea, you can also use it as a systemd service with the included service files:     
+From the source folder, do:      
+`sudo cp systemd/* /etc/systemd/system/`
+`sudo systemctl daemon-reload`
+
+Then activate the services, like this, once you're done configuring:
+`sudo systemctl enable --now routertoolsd-inet`
+`sudo systemctl enable --now routertoolsd-wifi@INTERFACE_NAME`
 
 **Configuration is done via text file editing, you can find every relevant option in folder /etc/routertools.d/**     
 
+It automates tedious tasks such as setting up NAT, ath9k settings, dynack, regdomain setting, ... and service restarting that cannot be done within hostapd.     
 Any form of internet access is supported via scripts in routertools.d, but Arch Linux's pppd scripts are defaults.      
 For example, you could have scripts setting up/down an Ethernet link with DHCP.
 
@@ -29,14 +43,6 @@ A valid profile has two files:
 `/etc/routertools.d/wifi-access-points/[interface_name].conf`  <-- standard x86routertools interface config file          
 `/etc/routertools.d/wifi-access-points/[interface_name]_hostapd.conf` <-- your custom hostapd.conf    
 
-x86routertools can be installed by downloading the git repository and copying `routertools` to /usr/bin:     
-`sudo wget https://gitlab.com/yagocl/x86routertools/-/raw/master/routertools -O /usr/bin/routertools; sudo chmod og+xr /usr/bin/routertools`  
-  
-Then generating the base configuration files:        
-`sudo routertools reset-cfg`     
-
-If you want to be able to call it with the fancier command 'rt':     
-`sudo ln -s /usr/bin/routertools /usr/bin/rt`     
 
 **System Requirements:      
 `An AP capable network adapter (Preferably ath9k)`     

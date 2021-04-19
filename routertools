@@ -67,7 +67,7 @@ Help(){
         echo "[] indicates a necessary argument. {} indicates an optional one."
         echo "List of arguments:"
         echo ""
-	    echo "  edit [AP]		           edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
+        echo "  edit [AP]		   edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
         echo "  status-internet, inet      checks if internet access is present and exits"
         echo "  status-wifi, wifi {AP}     checks if the wifi AP(s) is/are up and running and exits"
         echo "  status-services, srv       checks if important services are running and exits"
@@ -106,7 +106,7 @@ Help(){
         echo "* ani-off {AP}               disables adaptive noise immunity on all APs or on {AP} only"
         echo "* lnamix-on {AP}             enables low noise amplifier signal mixing on all APs or on {AP} only"
         echo "* lnamix-off {AP}            disables low noise amplifier signal mixing on all APs or on {AP} only"
-	    echo "* ath9k-recalibrate {AP}     recalibrates paprd & ani on atheros cards, best used in a cron job"
+        echo "* ath9k-recalibrate {AP}     recalibrates paprd & ani on atheros cards, best used in a cron job"
         echo "  powersave-on {AP}          enables power saving features on all APs or on {AP} only"
         echo "  powersave-off {AP}         disables power saving features on all APs or on {AP} only"
         echo "  reset-config, reset-cfg    resets x86routertools configuration files to default"
@@ -363,12 +363,8 @@ if [[ ! -d /etc/routertools.d ]]; then
         echo "# will be set to aggressive mode on all interfaces. use this on highly asymmetric links like satellite." >> $f
         echo "sqm_ack_filter_aggressive=false" >> $f
         echo "" >> $f
-        echo "# ack_filter_wifi_only -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
-        echo "# will only be active on wifi interfaces, which tend to be quite asymmetric." >> $f
-        echo "ack_filter_wifi_only=false" >> $f
-        echo "" >> $f
-		echo "# ack_filter_no_ppp -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
-		echo "# will not be enabled on ppp interfaces. try this if you encounter problems with ppp" >> $f
+	echo "# ack_filter_no_ppp -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
+	echo "# will not be enabled on ppp interfaces. try this if you encounter problems with ppp" >> $f
         echo "ack_filter_no_ppp=false" >> $f
         echo "" >> $f
         echo "# restart_services_for_wifi -> a boolean. if true, important_services will be automatically restarted alongside wifi interfaces." >> $f
@@ -381,25 +377,29 @@ if [[ ! -d /etc/routertools.d ]]; then
         echo "# sqm_inet_download -> a number. set this to your internet's download speed in Mbps." >> $f
         echo "# if this is not set, i will just not do download traffic shaping." >> $f
         echo "sqm_inet_download=" >> $f
-	    echo "" >> $f
+	echo "" >> $f
         echo "# sqm_wash_markings -> a boolean. if true, washes out traffic type markings inbound." >> $f
         echo "# use this if you don't trust the ISP to get them right." >> $f
         echo "sqm_wash_markings=false" >> $f
         echo "" >> $f
         echo "# sqm_use_overheads -> a boolean. if true, sqm will use some predefined overhead keywords for packet size compensation. may help with bufferbloat." >> $f
         echo "sqm_use_overheads=true" >> $f
+	echo "" >> $f
+	echo "# sqm_wifi_wash -> a boolean. if true, washes diffserv markings on wifi interfaces, for when you don't trust WMM to get things right." >> $f
+	echo "# this will automatically set besteffort on the wifi interfaces." >> $f
+	echo "sqm_wifi_wash=false" >> $f
         echo "" >> $f
         echo "# sqm_diffserv -> a number. select number of diffserv tins cake will use, can be 0, 3, 4 or 8" >> $f
         echo "# 0 is besteffort and may complement sqm_wash_markings. if unset, 4 will be used."
         echo "sqm_diffserv=4" >> $f
         echo "" >> $f
-	    echo "# sqm_enable_ifb_on_ethernet -> a boolean. if true, cake traffic shaping over ifb" >> $f
+	echo "# sqm_enable_ifb_on_ethernet -> a boolean. if true, cake traffic shaping over ifb" >> $f
         echo "# will also be attempted on ethernet interfaces, not just ppp." >> $f
-	    echo "# enable this if you get internet on this machine via NAT/DHCP from another router." >> $f
-	    echo "sqm_enable_ifb_on_ethernet=false" >> $f
-	    echo "" >> $f
-	    echo "# enable_bbr -> a boolean. if true, enables Google's BBR tcp congestion algorithm for" >> $f
-	    echo "# enhanced network performance, when applying SQM." >> $f
+	echo "# enable this if you get internet on this machine via NAT/DHCP from another router." >> $f
+	echo "sqm_enable_ifb_on_ethernet=false" >> $f
+	echo "" >> $f
+	echo "# enable_bbr -> a boolean. if true, enables Google's BBR tcp congestion algorithm for" >> $f
+	echo "# enhanced network performance, when applying SQM." >> $f
         echo "enable_bbr=true" >> $f
 	
         f="$d/wifi-access-points/example_interface.conf"
@@ -476,7 +476,7 @@ if [[ ! -d /etc/routertools.d ]]; then
         echo "# NETWORKING OPTIONS #" >> $f
         echo "" >> $f
         echo "# require_internet -> a boolean. true makes it so this wireless interface will only be set up via check commands if an internet connection is available." >> $f
-		echo "require_internet=false" >> $f
+	echo "require_internet=false" >> $f
         echo "" >> $f
         echo "# enable_ipv6 -> a boolean. true only enables ipv6 forwarding on this interface." >> $f
         echo "# if you actually want it to work you need radvd or a configured dnsmasq." >> $f
@@ -519,10 +519,10 @@ initfs_daemon_cfg(){
         echo "# these options are only valid for the --daemon command" >> $f
         echo "" >> $f
         echo "# daemon_manage_inet_every -> a number in seconds. the internet watchdog will be executed every this amount of time." >> $f
-        echo "daemon_manage_inet_every=30" >> $f
+        echo "daemon_manage_inet_every=60" >> $f
         echo "" >> $f
         echo "# daemon_manage_wifi_every -> a number in seconds. the wifi watchdog will be executed every this amount of time." >> $f
-        echo "daemon_manage_wifi_every=30" >> $f
+        echo "daemon_manage_wifi_every=15" >> $f
         echo "" >> $f
         echo "# daemon_wifi_wait_for_internet_timeout -> a number in seconds." >> $f
         echo "# if running in daemon mode and require_internet is enabled, after this long and internet is still not available wifi will be started anyway." >> $f
@@ -905,8 +905,6 @@ modprobe sch_cake
 modprobe act_mirred
 fi
 
-if [[ "$ack_filter_wifi_only" != "true" ]]; then
-
     if [[ "$enable_cake_ack_filter" == "true" ]]; then
         local extra_arg="ack-filter"
         else
@@ -916,8 +914,6 @@ if [[ "$ack_filter_wifi_only" != "true" ]]; then
     if [[ "$enable_cake_ack_filter" == "true" ]] && [[ "$sqm_ack_filter_aggressive" == "true" ]]; then
         local extra_arg="ack-filter-aggressive"
     fi
-
-fi
 
 if [[ $sqm_diffserv -eq 0 ]]; then
 
@@ -1067,13 +1063,13 @@ echo "Applying queue discipline to $i (ethernet interface)"
 	if [[ "$sqm_enable_ifb_on_ethernet" == "true" ]]; then
 
 	ifb_check=$(echo "$ifb_ifaces" | grep -i "$i")
-		if [[ "$ifb_check" = "" ]]; then
+	   if [[ "$ifb_check" = "" ]]; then
 		tc qdisc del dev $i root 2>/dev/null
 
 		if [[ "$sqm_inet_upload" != "" ]]; then
-		tc qdisc add dev $i root cake ${diffserv}nat bandwidth "$sqm_inet_upload"Mbit ${overhead}split-gso $extra_arg
+			tc qdisc add dev $i root cake ${diffserv}nat bandwidth "$sqm_inet_upload"Mbit ${overhead}split-gso $extra_arg
 		else
-		tc qdisc add dev $i root cake ${diffserv}nat split-gso ${overhead}$extra_arg
+			tc qdisc add dev $i root cake ${diffserv}nat split-gso ${overhead}$extra_arg
 		fi
 
 		ip link add name ifb$i type ifb
@@ -1084,17 +1080,17 @@ echo "Applying queue discipline to $i (ethernet interface)"
     if [[ "$sqm_wash_markings" != "true" ]]; then
 
         if [[ "$sqm_inet_download" != "" ]]; then
-        tc qdisc add dev ifb$i root cake ${diffserv}nat bandwidth "$sqm_inet_download"Mbit ${overhead}split-gso
-		else
+        	tc qdisc add dev ifb$i root cake ${diffserv}nat bandwidth "$sqm_inet_download"Mbit ${overhead}split-gso
+	else
 		tc qdisc add dev ifb$i root cake ${diffserv}nat split-gso ${overhead}dual-dsthost
-		fi
+	fi
 
         elif [[ "$sqm_wash_markings" == "true" ]]; then
 
             if [[ "$sqm_inet_download" != "" ]]; then
-            tc qdisc add dev ifb$i root cake nat bandwidth "$sqm_inet_download"Mbit split-gso ${overhead}besteffort wash
+            	tc qdisc add dev ifb$i root cake nat bandwidth "$sqm_inet_download"Mbit split-gso ${overhead}besteffort wash
             else
-            tc qdisc add dev ifb$i root cake nat split-gso besteffort wash ${overhead}dual-dsthost
+            	tc qdisc add dev ifb$i root cake nat split-gso besteffort wash ${overhead}dual-dsthost
             fi
 
     fi
@@ -1103,25 +1099,11 @@ echo "Applying queue discipline to $i (ethernet interface)"
 		tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
 		fi
  	else
-	tc qdisc del dev $i root 2>/dev/null
-	tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
+		tc qdisc del dev $i root 2>/dev/null
+		tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
 	fi
 fi
 done
-
-if [[ "$ack_filter_wifi_only" == "true" ]]; then
-
-    if [[ "$enable_cake_ack_filter" == "true" ]]; then
-        local extra_arg="ack-filter"
-        else
-        local extra_arg=""
-    fi
-
-    if [[ "$enable_cake_ack_filter" == "true" ]] && [[ "$sqm_ack_filter_aggressive" == "true" ]]; then
-        local extra_arg="ack-filter-aggressive"
-    fi
-
-fi
 
 if [[ "$sqm_use_overheads" == "true" ]]; then
     overhead=""
@@ -1136,14 +1118,14 @@ for i in $wifi_ifaces; do
     if [[ "$i_check" = "" ]]; then
     echo "Applying queue discipline to $i (wireless interface)"
     tc qdisc del dev $i root 2>/dev/null
-    tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 17ms $extra_arg
+    	if [[ "$sqm_wifi_wash" == "true" ]]; then
+	tc qdisc add dev $i root cake wash besteffort ${overhead}split-gso rtt 50ms
+	else
+    	tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 50ms
+	fi
     fi
 
 done
-
-if [[ "$ack_filter_wifi_only" == "true" ]]; then
-        local extra_arg=""
-fi
 
 if [[ "$sqm_use_overheads" == "true" ]]; then
     # Assume virtual interfaces don't have overhead
@@ -1159,7 +1141,7 @@ for i in $vir_ifaces; do
     if [[ "$i_check" = "" ]]; then
         echo "Applying queue discipline to $i (virtual interface)"
         tc qdisc del dev $i root 2>/dev/null
-        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 10ms $extra_arg
+        tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 10ms $extra_arg
     fi
 
 done
@@ -1177,7 +1159,7 @@ for i in $tun_ifaces; do
     if [[ "$i_check" = "" ]]; then
         echo "Applying queue discipline to $i (tunnel interface)"
         tc qdisc del dev $i root 2>/dev/null
-        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso rtt 300ms $extra_arg
+        tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 300ms $extra_arg
     fi
 
 done
@@ -1197,7 +1179,7 @@ if [[ "$enable_bbr" == "true" ]]; then
         else
             echo "Your kernel does not support either BBRv1 or BBRv2, or the modules aren't loaded. Keeping default congestion control."
         fi
-	fi
+    fi
 fi
 
 }
@@ -2273,6 +2255,7 @@ daemon_inet(){
     
     while true; do
     
+    # Wait a grace period while internet is initializing so we don't make a mistake
     if ps -p $daemon_child_pid > /dev/null 2>&1; then
         if [[ $GRACE_PERIOD_BLOCK -eq 1 ]]; then
             GRACE_PERIOD=0
@@ -2346,7 +2329,7 @@ daemon_wifi(){
         GRACE_PERIOD=0
         GRACE_PERIOD_BLOCK=1
     else
-        
+        # Wait a grace period to allow hostapd to finish initializing so we don't make a mistake
         if [[ $require_internet == true ]] && [[ $daemon_wifi_wait_for_internet_timeout -eq $daemon_wifi_wait_for_internet_timeout ]]; then
             if check_inet_short; then
                 CLEAR=1
@@ -2354,12 +2337,24 @@ daemon_wifi(){
                 CLEAR=0
                 GRACE_PERIOD=0
                 GRACE_PERIOD_BLOCK=1
-            fi
+            fi 
         fi
         
         if [[ $CLEAR -ne 0 ]]; then
-            check_ap "$1" &
-            [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+	    
+	    if [[ $require_internet == true ]]; then
+	    	if [[ $SECONDS -gt $daemon_wifi_wait_for_internet_timeout ]]; then
+            		check_ap "$1" &
+		else
+			if check_inet_short; then
+				check_ap "$1" &
+			fi
+		fi
+	    else
+	    	check_ap "$1" &
+	    fi
+	    
+	    [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
             daemon_child_pid=$!
             export daemon_child_pid=$daemon_child_pid
             GRACE_PERIOD_BLOCK=0

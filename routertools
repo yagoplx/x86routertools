@@ -1574,6 +1574,7 @@ for i in $ifaces; do
 		if get_hostapd_status $i ; then
 			echo "Interface $i is up, in AP mode and its hostapd instance is running. Nothing to do."
 			ifv echo "Netstat dump: $(netstat -i | grep -i wlp4s0 | tr -d [:alpha:] | tr -d [:blank:])"
+			ledctl rmlock 1
 			ledctl blink
 		else
 			echo "Interface $i is down, not in AP mode or its hostapd instance is not running."

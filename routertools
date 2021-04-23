@@ -548,8 +548,7 @@ return 0
 fi
 
 control="/sys/class/leds/$status_led"
-periodic_lock="/dev/shm/routertools_locks/x86routertools_led_lock"
-mkdir -p "$periodic_lock" &>/dev/null
+mkdir -p /dev/shm/routertools_locks &>/dev/null
 
 case $1 in
 
@@ -571,11 +570,11 @@ echo timer | tee $control/trigger &>/dev/null
 ;;
 
 mklock)
-touch "$periodic_lock"_$2 &>/dev/null
+touch /dev/shm/routertools_locks/x86routertools_led_lock_$2 &>/dev/null
 ;;
 
 rmlock)
-rm "$periodic_lock"_$2 &>/dev/null
+rm /dev/shm/routertools_locks/x86routertools_led_lock_$2 &>/dev/null
 ;;
 
 on)

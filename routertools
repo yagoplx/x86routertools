@@ -556,7 +556,7 @@ case $1 in
 blink)
 [[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
 
-if [[ ! -f $control/shot ]]; then
+if [[ ! -f "$control"/shot ]]; then
 echo oneshot | tee $control/trigger &>/dev/null
 fi
 

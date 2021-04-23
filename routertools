@@ -1267,7 +1267,7 @@ for i in $wifi_ap_interfaces; do
 	sleep 6.33
 	dynack_on $i
 	ledctl rmlock 3
-	ledctl off
+	ledctl blink
 done
 
 }
@@ -1569,7 +1569,7 @@ for i in $ifaces; do
 		ledctl mklock 1
 		ap_start $i
 		ledctl rmlock 1
-		ledctl off
+		ledctl blink
 	else
 		if get_hostapd_status $i ; then
 			echo "Interface $i is up, in AP mode and its hostapd instance is running. Nothing to do."
@@ -1583,7 +1583,7 @@ for i in $ifaces; do
 			ledctl mklock 1
 			ap_start $i
 			ledctl rmlock 1
-			ledctl off
+			ledctl blink
 		fi
 	fi
 	
@@ -2003,6 +2003,8 @@ check_internet(){
 	# Act on test results
 	if [[ $bad_inet -eq 1 ]] || [[ $bad_inet_iface -eq 1 ]]; then
             echo "Internet is not reachable, attempting to reconnect"
+	    ledctl periodic
+	    ledctl mklock 2
 		if [[ $bad_inet -eq 1 ]]; then
             echo "Reason: Could not reach external addresses"
             reason_1="could not reach external addresses"
@@ -2029,6 +2031,8 @@ check_internet(){
 		start_internet
 		else
 		echo "Internet interface is working normally"
+		ledctl rmlock 2
+		ledctl blink
 	fi
 
 	if [[ $bad_dns -eq 1 ]]; then
@@ -2041,7 +2045,7 @@ check_internet(){
 		echo "DNS lookup is working normally"
 		sleep 0.5
 		ledctl rmlock 2
-		ledctl off
+		ledctl blink
 	fi
 
 }

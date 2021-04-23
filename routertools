@@ -29,7 +29,11 @@
 
 trap_ctl(){
     # Clean up our trash and quit if the user does CTRL+C
-    cleanup 2>/dev/null
+    cleanup &>/dev/null
+    ledctl rmlock 1 &>/dev/null
+    ledctl rmlock 2 &>/dev/null
+    ledctl rmlock 3 &>/dev/null
+    ledctl off &>/dev/null
 }
 
 # Initialize trap
@@ -37,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.2.12"
+version="1.2.13"
 error_count=0
 crit_count=0
 crit_add=0
@@ -326,6 +330,10 @@ if [[ ! -d /etc/routertools.d ]]; then
         echo "# if true, the script will try to use logger to send messages to the system log." >> $f
         echo "# if you are running routertools in the crontab or via a systemd service, you don't need this." >> $f
         echo "use_logger=false" >> $f
+	echo "" >> $f
+	echo "# status_led -> a string. point this to an entry in /sys/class/leds/ to have routertools control that led" >> $f
+	echo "# for indicating status changes. leave empty to turn it off." >> $f
+	echo "status_led=ath9k-phy0" >> $f
         echo "" >> $f
         echo "# inet_iface -> the interface that will be checked by" >> $f
         echo "# internet commands, and started by internet scripts. example: enp2s0" >> $f
@@ -531,6 +539,51 @@ initfs_daemon_cfg(){
         echo "" >> $f
     
     unset f
+}
+
+ledctl(){
+
+if [[ ! -d "/sys/class/leds/$status_led" ]]; then
+return 0
+fi
+
+control="/sys/class/leds/$status_led"
+periodic_lock="/dev/shm/routertools_locks/x86routertools_led_lock"
+
+case $1 in
+
+blink)
+[[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
+echo oneshot | tee $control/trigger &>/dev/null
+echo 100 | tee $control/delay_on &>/dev/null
+echo 100 | tee $control/delay_off &>/dev/null
+echo 1 | tee $control/shot &>/dev/null
+;;
+
+periodic)
+[[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
+echo timer | tee $control/trigger &>/dev/null
+;;
+
+mklock)
+touch "$periodic_lock"_$2 &>/dev/null
+;;
+
+rmlock)
+rm "$periodic_lock"_$2 &>/dev/null
+;;
+
+on)
+[[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
+echo default-on | tee $control/trigger &>/dev/null
+;;
+
+off)
+[[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
+echo none | tee $control/trigger &>/dev/null
+;;
+esac
+
 }
 
 send_to_syslog(){
@@ -1197,7 +1250,8 @@ else
 fi
 
 for i in $wifi_ap_interfaces; do
-
+	ledctl periodic
+	ledctl mklock 3
 	echo "Recalibrating special ath9k features on $i"
 	ani_off $i
 	sleep 3
@@ -1208,7 +1262,8 @@ for i in $wifi_ap_interfaces; do
 	paprd_on $i
 	sleep 6.33
 	dynack_on $i
-
+	ledctl rmlock 3
+	ledctl off
 done
 
 }
@@ -1506,16 +1561,25 @@ for i in $ifaces; do
 		echo "Interface $i is down."
 		checksu || crit_error "You need to be root for this to start it back up."
 		echo "Starting it now."
+		ledctl periodic
+		ledctl mklock 1
 		ap_start $i
+		ledctl rmlock 1
+		ledctl off
 	else
 		if get_hostapd_status $i ; then
 			echo "Interface $i is up, in AP mode and its hostapd instance is running. Nothing to do."
 			ifv echo "Netstat dump: $(netstat -i | grep -i wlp4s0 | tr -d [:alpha:] | tr -d [:blank:])"
+			ledctl blink
 		else
 			echo "Interface $i is down, not in AP mode or its hostapd instance is not running."
 			checksu || crit_error "You need to be root for this to start it back up."
 			echo "Attempting to start $i now."
+			ledctl periodic
+			ledctl mklock 1
 			ap_start $i
+			ledctl rmlock 1
+			ledctl off
 		fi
 	fi
 	
@@ -1647,6 +1711,7 @@ get_dns_status(){
 	
 	# Sometimes ping will get stuck. This kills ping.
 	while [[ $elapsed -lt $inet_check_timeout ]]; do
+	ledctl blink
 		elapsed=$(( $elapsed + 1))
 		[[ -f /dev/shm/routertools.netrec.dns ]] && [[ -s /dev/shm/routertools.netrec.dns ]] && break
 		sleep .1
@@ -1721,6 +1786,7 @@ get_inet_status(){
 	
 	# Sometimes ping will get stuck. This kills ping.
 	while [[ $elapsed -lt $inet_check_timeout ]]; do
+	ledctl blink
 		elapsed=$(( $elapsed + 1))
 		[[ -f /dev/shm/routertools.netrec.inet ]] && [[ -s /dev/shm/routertools.netrec.inet ]] && break
         sleep .1
@@ -1750,6 +1816,7 @@ get_inet_status(){
 get_inet_iface_status(){
 
 	local istatus=$(netstat -i | awk '{print $1;}' | grep -vE "Kernel|Iface" | grep -w "$inet_iface" | wc -l)
+	ledctl blink
 	
 	if [[ $istatus -gt 0 ]]; then
 		echo "Interface $inet_iface is up."
@@ -1784,7 +1851,8 @@ for i in $ifaces; do
 	echo "Probing AP $i status..."
 	local is_on=$(netstat -i | grep -c "$i")
 	local is_ap=$(iw "$i" info | grep -i type | grep -ic 'AP')	
-
+	ledctl blink
+	
 	if [[ $is_on -gt 0 ]]; then
 		echo "Interface $i is up."
 		else
@@ -1962,9 +2030,14 @@ check_internet(){
 	if [[ $bad_dns -eq 1 ]]; then
 		echo "DNS is not working, attempting to restart it"
 		rootnotify "Attempting to restart DNS, cannot resolve domain names"
+		ledctl periodic
+		ledctl mklock 2
 		restart_services
 		else
 		echo "DNS lookup is working normally"
+		sleep 0.5
+		ledctl rmlock 2
+		ledctl off
 	fi
 
 }
@@ -2682,28 +2755,28 @@ case "$cmd_arg" in
         powersave-off) powersave_off "$2" 
         shift;;       
         
-        display-ani) display_ani "$2" 
+        display-ani|show-ani) display_ani "$2" 
         _exit;;
         
-        display-rates) display_rates "$2" "$3"
+        display-rates|show-rates) display_rates "$2" "$3"
         _exit;;
         
-        display-airtime) display_airtime "$2" "$3"
+        display-airtime|show-airtime) display_airtime "$2" "$3"
         _exit;;
         
-        display-devices|display-local-network) display_local_network
+        display-devices|display-local-network|show-devices) display_local_network
         _exit;;
         
-        display-qdisc) display_qdisc "$2"
+        display-qdisc|show-qdisc) display_qdisc "$2"
         _exit;;
         
         list-devices|ls|show-local-network) show_local_network 
         shift;;
 		
-		test-notify) rootnotify "$2" 
+	test-notify) rootnotify "$2" 
         shift;;
 		
-		edit-config|edit|conf) editconf "$2" 
+	edit-config|edit|conf) editconf "$2" 
         shift;;
         
         *) Invalid_Help

@@ -12,7 +12,7 @@
 This is a command line toolkit written in Bash that aims to turn a regular x86_64 computer running GNU/Linux into a wireless router or access point (AP), whilst managing things like system services, alerts, system LEDs and making sure the network is always up via watchdog daemons.
 
 Similar in nature to create_ap, this goes a bit further with the configurability of the whole program and the scope. It can do:
-* Watch and restart wireless APs when needed, with per-AP configuration
+* Watch and restart wireless APs when needed, with per-AP configuration and simple masquerading/fowarding rules.
 * Watch and restart the internet-facing interface when needed via user-made scripts (x86routertools takes care of 'detecting' connectivity)
 * Automatically restart a service 'stack' on network initialization, for DNS sinkholing setups for example.
 * Manage queue disciplines with CAKE SQM and pre-defined categories

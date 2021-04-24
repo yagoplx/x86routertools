@@ -1,4 +1,6 @@
 ![new_banner](https://github.com/yagoplx/x86routertools/raw/main/brand/newbanner.png)
+[![Build Status](https://travis-ci.org/yagoplx/x86routertools.png?branch=master)](https://travis-ci.org/yagoplx/x86routertools)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/yagoplx/x86routertools/issues)
 # Table of Contents
 * [Introduction to x86routertools](#whatis)
 * [Using the command line tools](#cmdline)

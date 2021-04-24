@@ -2561,6 +2561,7 @@ if [[ $count_arg -eq 0 ]]; then
 
         Version
         echo "No command given, run 'x86routertools -h' for usage."
+	exit 0
         else
         if [[ "$@" == "-h" ]] || [[ "$@" == "--help" ]]; then
             true

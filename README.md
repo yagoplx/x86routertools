@@ -100,8 +100,9 @@ You can have the daemon start on boot for the standard wifi router experience:
 * `sudo systemctl enable routertoolsd-wifi@interface_name`
 
 #### <a name="cfgopt"></a>Configuration options
-Configuration is system-wide and is done via files in /etc/routertools.d  
-[Take me to the wiki page](https://github.com/yagoplx/x86routertools/wiki/Configuration)
+Configuration is system-wide and is done via files in `/etc/routertools.d`    
+
+[List of configuration options](https://github.com/yagoplx/x86routertools/wiki/Configuration)
 
 
 #### <a name="scripts"></a>Scripts and examples

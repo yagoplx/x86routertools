@@ -526,16 +526,16 @@ initfs(){
 initfs_daemon_cfg(){
 
     if [[ $DUMP_INITFS -eq 1 ]]; then
-    mkdir routertools.d 2>/dev/null
-    initfile routertools.d/daemon.conf
-    chmod og+xr routertools.d/daemon.conf
-    f=routertools.d/daemon.conf
+        mkdir routertools.d 2>/dev/null
+        initfile routertools.d/daemon.conf
+        chmod og+xr routertools.d/daemon.conf
+        f=routertools.d/daemon.conf
     else
-    checksu || crit_error "Cannot create configuration, please try again as root."
-    mkdir /etc/routertools.d 2>/dev/null
-    initfile /etc/routertools.d/daemon.conf
-    chmod og+xr /etc/routertools.d/daemon.conf
-    f=/etc/routertools.d/daemon.conf
+        checksu || crit_error "Cannot create configuration, please try again as root."
+        mkdir /etc/routertools.d 2>/dev/null
+        initfile /etc/routertools.d/daemon.conf
+        chmod og+xr /etc/routertools.d/daemon.conf
+        f=/etc/routertools.d/daemon.conf
     fi
 
     echo "# x86routertools daemon mode configuration file" >> $f
@@ -557,10 +557,10 @@ initfs_daemon_cfg(){
 }
 
 genconfig(){
-# Dump configuration 'presets' into current folder
-export nofail=1
-DUMP_INITFS=1 initfs
-DUMP_INITFS=1 initfs_daemon_cfg
+    # Dump configuration 'presets' into current folder
+    export nofail=1
+    DUMP_INITFS=1 initfs
+    DUMP_INITFS=1 initfs_daemon_cfg
 }
 
 ledctl(){
@@ -2822,7 +2822,7 @@ parse_cmdline(){
 
             edit-config|edit|conf) editconf "$2"
                 shift ;;
-            
+
             genconfig_all) genconfig
                 shift ;;
 

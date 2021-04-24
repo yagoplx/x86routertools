@@ -588,6 +588,8 @@ ledctl(){
 
         periodic)
             [[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
+            echo 100 | tee $control/delay_on &>/dev/null
+            echo 100 | tee $control/delay_off &>/dev/null
             echo timer | tee $control/trigger &>/dev/null
             ;;
 
@@ -2341,6 +2343,10 @@ daemon_term(){
     rm /dev/shm/routertools_pid_$daemon_type 2>/dev/null
     kill "$daemon_child_pid" 2>/dev/null
     kill -9 "$sleep_pid" 2>/dev/null
+    ledctl rmlock 1 &>/dev/null
+    ledctl rmlock 2 &>/dev/null
+    ledctl rmlock 3 &>/dev/null
+    ledctl off &>/dev/null
     _exit
 
 }
@@ -2352,7 +2358,8 @@ daemon_inet(){
     if ps -p $(cat /dev/shm/routertools_pid_$daemon_type) > /dev/null 2>&1; then
         crit_error "There is an instance of this daemon already running."
     fi
-
+    ledctl rmlock 2 &>/dev/null
+    ledctl blink &>/dev/null
     export daemon_pid=$BASHPID
     export daemon_child_pid=""
     GRACE_PERIOD=0
@@ -2410,7 +2417,8 @@ daemon_wifi(){
     if ps -p $(cat /dev/shm/routertools_pid_$1) > /dev/null 2>&1; then
         crit_error "There is an instance of this daemon already running."
     fi
-
+    ledctl rmlock 1 &>/dev/null
+    ledctl blink &>/dev/null
     export daemon_type="$1"
     export daemon_pid=$BASHPID
     export daemon_child_pid=""

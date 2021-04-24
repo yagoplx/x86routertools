@@ -11,6 +11,8 @@
 * [Using the daemon](#daemon)
 * [System requirements](#sysreq)
 * [Installation](#install)
+* [Configuration options](#cfgopt)
+* [Scripts and examples](#scripts)
 ## <a name="whatis"></a>Introduction to x86routertools
 This is a command line toolkit written in Bash that aims to turn a regular x86_64 computer running GNU/Linux into a wireless router or access point (AP), whilst managing things like system services, alerts, system LEDs and making sure the network is always up via watchdog daemons.
 
@@ -66,9 +68,9 @@ Must be installed:
 * ifconfig
 * iptables
 * hostapd
-* wget (for grabbing hostapd configuration example)
 
 Optional:
+* wget, for grabbing hostapd configuration reference.
 * haveged or rngd, without, WPA/WEP performance may suffer
 * A firewall like ufw, shorewall or firewalld. x86routertools *will not block any vulnerable ports for you*!
 * A DHCP server like Pi-hole or dnsmasq, otherwise your clients will not be able to use DHCP. x86routertools *will not configure DNS for you*!
@@ -96,3 +98,11 @@ As for the internet facing interface, you should set up scripts to set them up a
 You can have the daemon start on boot for the standard wifi router experience:
 * `sudo systemctl enable routertoolsd-inet`
 * `sudo systemctl enable routertoolsd-wifi@interface_name`
+
+#### <a name="cfgopt"></a>Configuration options
+Configuration is system-wide and is done via files in /etc/routertools.d  
+[Take me to the wiki page](https://github.com/yagoplx/x86routertools/wiki/Configuration)
+
+
+#### <a name="scripts"></a>Scripts and examples
+[Take me to the wiki page](https://github.com/yagoplx/x86routertools/wiki/Scripts-and-Examples)

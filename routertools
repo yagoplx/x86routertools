@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.2.13"
+version="1.2.14"
 error_count=0
 crit_count=0
 crit_add=0
@@ -1223,6 +1223,7 @@ done
 
 # Show qdisc info if verbose
 ifv tc qdisc
+ledctl blink
 
 if [[ "$enable_bbr" == "true" ]]; then
     
@@ -1600,8 +1601,8 @@ setup_ap_networking(){
         z=0
         a=0
         load_prefs_iface $i
-		gateways="$gateway $gateway_x"
-		gateways6="$gateway_6 $gateway_6x"
+	gateways="$gateway $gateway_x"
+	gateways6="$gateway_6 $gateway_6x"
         wifi_virtual_ifaces="$i $wifi_virtual_ifaces"
 
      for i in $wifi_virtual_ifaces; do
@@ -1641,7 +1642,7 @@ setup_ap_networking(){
         
 			if [[ "$gateway_6" != "" ]]; then
 		         # Configure iptables v6
-                 echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
+                 	 echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
 		         ip -6 addr add $gateway_6/64 broadcast ${gateway_6%:*}:ffff dev $i
        			 ip6tables -w -t nat -I POSTROUTING -s ${gateway_6%:*}:ffff/64 ! -o $i -j MASQUERADE
        			 ip6tables -w -I FORWARD -i $i -s ${gateway_6%:*}:ffff/64 -j ACCEPT
@@ -2184,8 +2185,11 @@ sysctl_install(){
 	echo "net.ipv4.tcp_ecn = 1" >> "$f"
 	echo "net.ipv4.tcp_mtu_probing = 1" >> "$f"
 	echo "net.core.default_qdisc = fq_codel" >> "$f"
-	echo "net.ipv4.tcp_congestion_control = bbr" >> "$f"
-	echo "net.ipv4.tcp_congestion_control = bbr2" >> "$f"
+	echo "net.ipv4.tcp_dsack = 1" >> $f
+	echo "net.ipv4.tcp_sack = 1" >> $f
+	echo "net.ipv4.tcp_slow_start_after_idle = 1" >> $f
+	echo "net.ipv4.tcp_tw_reuse = 1" >> $f
+	echo "net.ipv4.tcp_fastopen = 3" >> $f
 	echo "##################################################" >> "$f"
 	
 	sysctl -p --system

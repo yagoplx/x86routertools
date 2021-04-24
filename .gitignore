@@ -1,6 +1,0 @@
-# Files potentially containing sensitive info
-*.priv
-*.priv.conf
-*.priv.key
-*.priv.pin
-*.priv.log

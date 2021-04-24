@@ -18,6 +18,7 @@ This is a command line toolkit written in Bash that aims to turn a regular x86_6
 Similar in nature to create_ap, this goes a bit further with the configurability of the whole program and the scope. It can do:
 * Watch and restart wireless APs when needed, with per-AP configuration and simple masquerading/fowarding rules.
 * Watch and restart the internet-facing interface when needed via user-made scripts (x86routertools takes care of 'detecting' connectivity)
+* Network status logging and status alerts to desktop/console/LED
 * Automatically restart a service 'stack' on network initialization, for DNS sinkholing setups for example.
 * Manage queue disciplines with CAKE SQM and pre-defined categories
 * Manage ath9k Wi-Fi cards' special features, like digital predistortion and ack timeout estimation.

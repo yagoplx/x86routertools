@@ -1,5 +1,5 @@
 
-name: CI
+name: check-syntax
 
 on:
   push:
@@ -17,5 +17,5 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: try-works
-        run: ./routertools -v
+        run: ./routertools
         

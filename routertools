@@ -276,43 +276,47 @@ initfs(){
 
     # Initialize folders and populate config files
 
-    checksu || crit_error "Cannot create configuration, please try again as root."
-
-    if [[ ! -d /dev/shm/x86routertools ]]; then
-        mkdir /dev/shm/x86routertools || crit_error
+    if [[ $DUMP_INITFS -eq 1 ]]; then
+        PREFIX=""
+    else
+        checksu || crit_error "Cannot create configuration, please try again as root."
+        PREFIX="/etc/"
     fi
 
-    if [[ ! -d /etc/routertools.d ]]; then
-        echo "Attempting to create /etc/routertools.d"
-        mkdir /etc/routertools.d || crit_error
-        echo "Creating basic directory structure in /etc/routertools.d"
-        mkdir /etc/routertools.d/wifi-access-points
-        mkdir /etc/routertools.d/scripts
+    if [[ ! -d /dev/shm/x86routertools ]]; then
+        mkdir /dev/shm/x86routertools &>/dev/null
+    fi
 
-        initfile /etc/routertools.d/scripts/stop-internet
-        initfile /etc/routertools.d/scripts/start-internet
-        initfile /etc/routertools.d/x86routertools.conf
-        initfile /etc/routertools.d/wifi-access-points/example_interface.conf
+    if [[ ! -d ${PREFIX}routertools.d ]]; then
+        echo "Attempting to create ${PREFIX}routertools.d"
+        mkdir ${PREFIX}routertools.d || crit_error
+        echo "Creating basic directory structure in ${PREFIX}routertools.d"
+        mkdir ${PREFIX}routertools.d/wifi-access-points
+        mkdir ${PREFIX}routertools.d/scripts
 
-        echo "Setting permissions on /etc/routertools.d"
-        chmod 700 /etc/routertools.d/*
-        chmod og+xr /etc/routertools.d
-        chmod og+xr /etc/routertools.d/x86routertools.conf
-        chmod og+xr /etc/routertools.d/wifi-access-points/example_interface.conf
-        chmod og+xr /etc/routertools.d/wifi-access-points
+        initfile ${PREFIX}routertools.d/scripts/stop-internet
+        initfile ${PREFIX}routertools.d/scripts/start-internet
+        initfile ${PREFIX}routertools.d/x86routertools.conf
+        initfile ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
+
+        echo "Setting permissions on ${PREFIX}routertools.d"
+        chmod 700 ${PREFIX}routertools.d/*
+        chmod og+xr ${PREFIX}routertools.d
+        chmod og+xr ${PREFIX}routertools.d/x86routertools.conf
+        chmod og+xr ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
+        chmod og+xr ${PREFIX}routertools.d/wifi-access-points
 
         # Hostapd file may contain plaintext passwords
-        chmod -R 700 /etc/routertools.d/wifi-access-points/example_interface_hostapd.conf
+        chmod -R 700 ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf
 
         echo "Downloading example hostapd.conf from w1.fi"
-        wget https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O /etc/routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
+        wget https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
 
         # Populate files
-        initfile /etc/routertools.d/scripts/start-internet
-        initfile /etc/routertools.d/scripts/stop-internet
-
+        initfile ${PREFIX}routertools.d/scripts/start-internet
+        initfile ${PREFIX}routertools.d/scripts/stop-internet
         # Contents of config files
-        d="/etc/routertools.d"
+        d="${PREFIX}routertools.d"
         f="$d/scripts/start-internet"
         echo "# This script is run with start-internet and alike commands" >> $f
         echo "# Example: pppoe-start on Arch Linux with a PPPoE modem." >> $f
@@ -521,13 +525,18 @@ initfs(){
 
 initfs_daemon_cfg(){
 
+    if [[ $DUMP_INITFS -eq 1 ]]; then
+    mkdir routertools.d 2>/dev/null
+    initfile routertools.d/daemon.conf
+    chmod og+xr routertools.d/daemon.conf
+    f=routertools.d/daemon.conf
+    else
     checksu || crit_error "Cannot create configuration, please try again as root."
-
     mkdir /etc/routertools.d 2>/dev/null
     initfile /etc/routertools.d/daemon.conf
     chmod og+xr /etc/routertools.d/daemon.conf
-
     f=/etc/routertools.d/daemon.conf
+    fi
 
     echo "# x86routertools daemon mode configuration file" >> $f
     echo "# these options are only valid for the --daemon command" >> $f
@@ -545,6 +554,13 @@ initfs_daemon_cfg(){
     echo "" >> $f
 
     unset f
+}
+
+genconfig(){
+# Dump configuration 'presets' into current folder
+export nofail=1
+DUMP_INITFS=1 initfs
+DUMP_INITFS=1 initfs_daemon_cfg
 }
 
 ledctl(){
@@ -2805,6 +2821,9 @@ parse_cmdline(){
                 shift ;;
 
             edit-config|edit|conf) editconf "$2"
+                shift ;;
+            
+            genconfig_all) genconfig
                 shift ;;
 
             *) Invalid_Help

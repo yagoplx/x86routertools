@@ -341,6 +341,7 @@ initfs(){
         echo "" >> $f
         echo "# important_services -> a list of systemd services important to this router." >> $f
         echo "# they will be started by the connectivity commands. example: dnsmasq haveged" >> $f
+        echo "# you should also include your firewall service here." >> $f
         echo "important_services=dnsmasq" >> $f
         echo "" >> $f
         echo "# notify_mode -> if properly set, check commands like check-inet will send a global notification if they notice" >> $f
@@ -401,14 +402,19 @@ initfs(){
         echo "# 0 is besteffort and may complement sqm_wash_markings. if unset, 4 will be used."
         echo "sqm_diffserv=4" >> $f
         echo "" >> $f
-        echo "# sqm_enable_ifb_on_ethernet -> a boolean. if true, cake traffic shaping over ifb" >> $f
+        echo "# sqm_enable_ifb_on_ethernet -> a boolean. if true, full cake traffic shaping" >> $f
         echo "# will also be attempted on ethernet interfaces, not just ppp." >> $f
         echo "# enable this if you get internet on this machine via NAT/DHCP from another router." >> $f
         echo "sqm_enable_ifb_on_ethernet=false" >> $f
         echo "" >> $f
         echo "# enable_bbr -> a boolean. if true, enables Google's BBR tcp congestion algorithm for" >> $f
-        echo "# enhanced network performance, when applying SQM." >> $f
+        echo "# enhanced network performance, when applying SQM. Will enable BBRv2 instead of v1 if available." >> $f
         echo "enable_bbr=true" >> $f
+        echo "" >> $f
+        echo "# enable_rpfilter -> a boolean. if true, enables reverse path filtering on all interfaces, when applying qdisc options." >> $f
+        echo "# this will block common address forging attacks on your network." >> $f
+        echo "# it does not replace a firewall!" >> $f
+        echo "enable_rpfilter=true" >> $f
 
         f="$d/wifi-access-points/example_interface.conf"
         echo "# x86routertools interface configuration file" >> $f
@@ -1224,7 +1230,15 @@ sqm_enable(){
     # Show qdisc info if verbose
     ifv tc qdisc
     ledctl blink
-
+    
+    # Enable rpfilter
+    if [[ "$enable_rpfilter" == "true" ]]; then
+        for i in /proc/sys/net/ipv4/conf/*/rp_filter; do
+            echo 2 | tee $i &>/dev/null
+        done
+    fi
+    
+    # Enable BBR or BBRv2
     if [[ "$enable_bbr" == "true" ]]; then
 
         if [[ $(sysctl net.ipv4.tcp_congestion_control | grep -i bbr | wc -l) -eq 0 ]]; then

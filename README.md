@@ -1,71 +1,90 @@
-# x86routertools
+![new_banner](https://github.com/yagoplx/x86routertools/raw/main/brand/newbanner.png)
+# Table of Contents
+* [Introduction to x86routertools](#whatis)
+* [Using the command line tools](#cmdline)
+* [Using the daemon](#daemon)
+* [System requirements](#sysreq)
+* [Installation](#install)
+## <a name="whatis"></a>Introduction to x86routertools
+This is a command line toolkit written in Bash that aims to turn a regular x86_64 computer running GNU/Linux into a wireless router or access point (AP), whilst managing things like system services, alerts, system LEDs and making sure the network is always up via watchdog daemons.
 
-## Originally up on https://gitlab.com/yagocl/x86routertools/-/raw/master/routertools, moved to GitHub. I no longer have that account.
+Similar in nature to create_ap, this goes a bit further with the configurability of the whole program and the scope. It can do:
+* Watch and restart wireless APs when needed, with per-AP configuration
+* Watch and restart the internet-facing interface when needed via user-made scripts (x86routertools takes care of 'detecting' connectivity)
+* Automatically restart a service 'stack' on network initialization, for DNS sinkholing setups for example.
+* Manage queue disciplines with CAKE SQM and pre-defined categories
+* Manage ath9k Wi-Fi cards' special features, like digital predistortion and ack timeout estimation.
+* Manage generic Wi-Fi AP features, like power saving, retransmission, regulatory domains and transmit power.
+* Optimize the network stack, for example, toggling on BBRv2/v1 if present.
+* Offer command line tools for wireless AP management and debugging.
 
-   
-**Scripts for using any Linux PC with a capable WiFi NIC as a fully-fledged wireless access point.     
+x86routertools is currently not compatible with NetworkManager, but a patch to set predefined interfaces as 'unmanaged' to fix this should be easy to make.
 
-Pretty much just glue, kind of like create_ap, but takes a different approach. You probably can't use this with NetworkManager.**     
+## <a name="cmdline"></a>Using the command line tools
+x86routertools comes with many verbs that can be used to get information on the system. 
 
-x86routertools can be installed by downloading the git repository and copying `routertools` to /usr/bin:     
-    
-`sudo wget https://gitlab.com/yagocl/x86routertools/-/raw/master/routertools -O /usr/bin/routertools; sudo chmod og+xr /usr/bin/routertools`  
-  
-Then generating the base configuration files:        
-    
-`sudo routertools reset-cfg`     
+For example, you can check what MCS rates your phone is using on the connection, to measure the quality of the service it is getting:
+* Get the MAC address of the device by looking at the list of connected devices:
+* `routertools ls`
+* Then, you can pull up the real-time rate display with the AP's interface name:
+* `routertools display-rates wlan0 aa:bb:cc:dd:ee:ff`
 
+You can also toggle many runtime options of a wireless interface. For example, to turn on LNA mixing on ath9k cards (the daemon can do this for you, too):
+* `routertools lnamix-on wlan0`
+* Or, to set it on all APs on the system:
+* `routertools lnamix-on`
 
-It can check and automatically start up hostapd with your custom configurations, making it very useful in cron jobs (as a watchdog):    
+Calling `routertools --help` should be enough to get you a full, descriptive list of commands.
 
-`* * * * * routertools check-wifi`     <-- checks and restarts AP if interface down or hostapd down       
+## <a name="daemon"></a>Using the daemon
+The x86routertools daemon has two instances, Wi-Fi and internet, which are independent from each other.
 
-`* * * * * routertools check-inet`     <-- checks and restarts internet if its interface is down      
+Their function is to watch the system-wide SQM/qdisc configuration, and watch the AP interfaces and the internet-facing interface respectively. How they work and what they do is extensively configurable via files in `/etc/routertools.d/`. The most important of them, containing the most options, is arguably `x86routertools.conf`.
 
-**Along with checking if the network is live, it can also be configured to send a warning to TTY or X11 desktop about the problem.** Though, it will attempt to solve the issue on its own if properly set up. (by restarting things, it can't fix the likes of a snapped cable)     
+To start the internet daemon, you can use:
+`sudo systemctl start routertoolsd-inet`
 
-It can check and automatically set up Cake SQM (+ BBRv1/v2) on new network interfaces, to pretty much nullify bufferbloat. It does this best as a crontab watchdog, and categorizes network interfaces in profiles, some configurable with traffic shaping. This is similar to what sqm-scripts does, but the code is different:      
+To start the wireless AP daemon:
+`sudo systemctl start routertoolsd-wifi@wlan0`
+Where, of course, wlan0 is the name of one interface you configured in `/etc/routertools.d/wifi-access-points`.
 
-`* * * * * routertools qdisc`    
+The daemons will regularly output their status to the system log, send desktop notifications, or make a light blink somewhere.
 
-If you don't like the idea, you can also use it as a systemd service with the included service files:     
+## <a name="sysreq"></a>System requirements
+* Access point-capable Wi-Fi card (ath9k is preferred but optional)
 
-From the source folder, do:      
+Must be installed:
+* systemd
+* netstat
+* iw
+* ifconfig
+* iptables
+* hostapd
 
-`sudo cp systemd/* /etc/systemd/system/`    
+Optional:
+* haveged or rngd, without, WPA/WEP performance may suffer
+* A firewall like ufw, shorewall or firewalld. x86routertools *will not block any vulnerable ports for you*! 
+## <a name="install"></a>Installation
+x86routertools is normally installed to `/usr/bin`. Other necessary directories like in `/etc` will be populated by the program on first run.
 
-`sudo systemctl daemon-reload`    
+To install it on your system:
+* Clone the repository somewhere:
+* `git clone https://github.com/yagoplx/x86routertools.git`
+* `cd x86routertools`
+* Move the files around:
+* `cp -v routertools /usr/bin/`
+* `cp -v systemd/* /etc/systemd/system/`
+* Populate the configuration directories:
+* `routertools reset-cfg`
 
-Then activate the services, like this, once you're done configuring:
+It should be ready for configuration, though you may also want to run a `systemctl daemon-reload` if you want to try out the daemon right away.
 
-`sudo systemctl enable --now routertoolsd-inet`      
+Configuration is well documented and required, check the new files at `/etc/routertools.d` for examples and info. For example, to register a new wireless interface with x86routertools, you will want to set up them at `/etc/routertools.d/wifi-access-points`.
 
-`sudo systemctl enable --now routertoolsd-wifi@INTERFACE_NAME`    
+Each wireless interface should have two files in there: a interfacename.conf, and a interfacename_hostapd.conf. Example files with all possible options documented are provided for you to copy/rename.
 
-**Configuration is done via text file editing, you can find every relevant option in folder /etc/routertools.d/**     
+As for the internet facing interface, you should set up scripts to set them up and down at `/etc/routertools.d/scripts`. The default is to just call the Arch Linux pppoe-start and pppoe-stop commands for PPPoE. The daemon will call the stop script when it restarts the interface, and then the start script. The command line tools also can use these scripts as well.
 
-It automates tedious tasks such as setting up NAT, ath9k settings, dynack, regdomain setting, ... and service restarting that cannot be done within hostapd.     
-
-Any form of internet access is supported via scripts in routertools.d, but Arch Linux's pppd scripts are defaults.      
-
-For example, you could have scripts setting up/down an Ethernet link with DHCP.
-
-Any amount of AP interfaces, hostapd instances and virtual bssids is supported, via profiles.       
-
-A valid profile has two files:         
-
-`/etc/routertools.d/wifi-access-points/[interface_name].conf`  <-- standard x86routertools interface config file          
-
-`/etc/routertools.d/wifi-access-points/[interface_name]_hostapd.conf` <-- your custom hostapd.conf    
-
-System Requirements:      
-`An AP capable network adapter (Preferably ath9k)`     
-`systemd`        
-`netstat`        
-`iw`     
-`ifconfig`           
-`hostapd`        
-
-x86routertools is free software licensed under the GPLv3.         
-
-Copyright (C) 2021 Yago Mont' Alverne         
+You can have the daemon start on boot for the standard wifi router experience:
+* `sudo systemctl enable routertoolsd-inet`
+* `sudo systemctl enable routertoolsd-wifi@interface_name`

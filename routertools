@@ -308,7 +308,7 @@ initfs(){
 
         echo "Downloading example hostapd.conf from w1.fi"
         wget https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
-        
+
         # Hostapd file may contain plaintext passwords
         chmod -R 700 ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf
 

@@ -306,11 +306,11 @@ initfs(){
         chmod og+xr ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
         chmod og+xr ${PREFIX}routertools.d/wifi-access-points
 
-        # Hostapd file may contain plaintext passwords
-        chmod -R 700 ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf
-
         echo "Downloading example hostapd.conf from w1.fi"
         wget https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
+        
+        # Hostapd file may contain plaintext passwords
+        chmod -R 700 ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf
 
         # Populate files
         initfile ${PREFIX}routertools.d/scripts/start-internet
@@ -403,7 +403,7 @@ initfs(){
         echo "sqm_wifi_wash=false" >> $f
         echo "" >> $f
         echo "# sqm_diffserv -> a number. select number of diffserv tins cake will use, can be 0, 3, 4 or 8" >> $f
-        echo "# 0 is besteffort and may complement sqm_wash_markings. if unset, 4 will be used."
+        echo "# 0 is besteffort and may complement sqm_wash_markings. if unset, 4 will be used." >> $f
         echo "sqm_diffserv=4" >> $f
         echo "" >> $f
         echo "# sqm_enable_ifb_on_ethernet -> a boolean. if true, full cake traffic shaping" >> $f

@@ -66,7 +66,8 @@ Must be installed:
 
 Optional:
 * haveged or rngd, without, WPA/WEP performance may suffer
-* A firewall like ufw, shorewall or firewalld. x86routertools *will not block any vulnerable ports for you*! 
+* A firewall like ufw, shorewall or firewalld. x86routertools *will not block any vulnerable ports for you*!
+* A DHCP server like Pi-hole or dnsmasq, otherwise your clients will not be able to use DHCP. x86routertools *will not configure DNS for you*!
 ## <a name="install"></a>Installation
 x86routertools is normally installed to `/usr/bin`. Other necessary directories like in `/etc` will be populated by the program on first run.
 

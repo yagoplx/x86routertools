@@ -1281,7 +1281,7 @@ load_prefs_error(){
 	else
         echo "Looks like you have no system configuration files for x86routertools. (/etc/routertools.d/)"
         echo "I'm going to generate them now."
-        rm -r /etc/routertools.d
+        rm -r /etc/routertools.d &>/dev/null
         initfs
         [[ -f /etc/routertools.d/daemon.conf ]] && _exit "Done. Try running x86routertools again."
     fi

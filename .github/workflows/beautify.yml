@@ -23,7 +23,7 @@ jobs:
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: '[auto] ci: apply code beautifier'
+          commit_message: '[auto] ci: run beautysh'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           

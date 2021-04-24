@@ -1230,14 +1230,14 @@ sqm_enable(){
     # Show qdisc info if verbose
     ifv tc qdisc
     ledctl blink
-    
+
     # Enable rpfilter
     if [[ "$enable_rpfilter" == "true" ]]; then
         for i in /proc/sys/net/ipv4/conf/*/rp_filter; do
             echo 2 | tee $i &>/dev/null
         done
     fi
-    
+
     # Enable BBR or BBRv2
     if [[ "$enable_bbr" == "true" ]]; then
 

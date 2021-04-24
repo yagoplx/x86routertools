@@ -66,6 +66,7 @@ Must be installed:
 * ifconfig
 * iptables
 * hostapd
+* wget (for grabbing hostapd configuration example)
 
 Optional:
 * haveged or rngd, without, WPA/WEP performance may suffer

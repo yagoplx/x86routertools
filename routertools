@@ -574,6 +574,13 @@ ledctl(){
 
     case $1 in
 
+        periodic)
+            [[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
+            echo timer | tee $control/trigger &>/dev/null
+            echo 500 | tee $control/delay_on &>/dev/null
+            echo 500 | tee $control/delay_off &>/dev/null
+            ;;
+
         blink)
             [[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
 
@@ -584,13 +591,6 @@ ledctl(){
             echo 100 | tee $control/delay_on &>/dev/null
             echo 100 | tee $control/delay_off &>/dev/null
             echo 1 | tee $control/shot &>/dev/null
-            ;;
-
-        periodic)
-            [[ $(ls /dev/shm/routertools_locks/ | grep -c 'x86routertools_led_lock') -ne 0 ]] && return 0
-            echo 500 | tee $control/delay_on &>/dev/null
-            echo 500 | tee $control/delay_off &>/dev/null
-            echo timer | tee $control/trigger &>/dev/null
             ;;
 
         mklock)

@@ -2417,6 +2417,8 @@ daemon_wifi(){
     if ps -p $(cat /dev/shm/routertools_pid_$1) > /dev/null 2>&1; then
         crit_error "There is an instance of this daemon already running."
     fi
+    
+    load_prefs_iface "$1"
     ledctl rmlock 1 &>/dev/null
     ledctl blink &>/dev/null
     export daemon_type="$1"
@@ -2472,6 +2474,8 @@ daemon_wifi(){
                     else
                         if check_inet_short; then
                             check_ap "$1" &
+                        else
+                            echo "Internet connection unavailable for now"
                         fi
                     fi
                 else

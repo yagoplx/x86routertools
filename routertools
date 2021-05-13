@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.2.16"
+version="1.2.17"
 error_count=0
 crit_count=0
 crit_add=0
@@ -1830,7 +1830,7 @@ get_inet_status(){
         sleep .1
     done
 
-    local inetcheck=$(cat /dev/shm/routertools.netrec.inet 2>/dev/null | grep -Ei "unreachable|temporary" | wc -l)
+    local inetcheck=$(cat /dev/shm/routertools.netrec.inet 2>/dev/null | grep -Ei "unreachable|temporary|100% packet loss" | wc -l)
 
     if [[ $elapsed -eq $inet_check_timeout ]] && [[ ! -s /dev/shm/routertools.netrec.inet ]]; then
         local inetcheck=1

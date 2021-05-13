@@ -2363,6 +2363,7 @@ daemon_inet(){
     if ps -p $(cat /dev/shm/routertools_pid_$daemon_type) > /dev/null 2>&1; then
         crit_error "There is an instance of this daemon already running."
     fi
+    export current_iface="$inet_iface"
     ledctl rmlock 2 &>/dev/null
     ledctl blink &>/dev/null
     export daemon_pid=$BASHPID
@@ -2423,7 +2424,8 @@ daemon_wifi(){
     if ps -p $(cat /dev/shm/routertools_pid_$1) > /dev/null 2>&1; then
         crit_error "There is an instance of this daemon already running."
     fi
-
+    
+    export current_iface="$1"
     load_prefs_iface "$1"
     ledctl rmlock 1 &>/dev/null
     ledctl blink &>/dev/null
@@ -2538,7 +2540,13 @@ stop_daemon_wifi(){
 daemon_sighup(){
     echo "Recieved SIGHUP, reloading configuration."
     load_prefs
-    load_prefs_iface "$1"
+    [[ "$daemon_type" != "inet" ]] && load_prefs_iface "$current_iface"
+    
+    # Reapply SQM
+    if [[ "$daemon_type" == "inet" ]]; then
+        sqm_disable
+        [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+    fi
 }
 
 list_daemons(){
@@ -2569,6 +2577,8 @@ reload_all_daemons(){
             if ps -p $daemon_pid > /dev/null 2>&1; then
                 kill -SIGHUP $daemon_pid 2>/dev/null
                 echo "Sent reload configuration request to daemon: $daemon_type"
+                # Avoid doing everything at the exact same time
+                sleep .1
             else
                 rm $i 2>/dev/null
             fi

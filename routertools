@@ -2424,7 +2424,7 @@ daemon_wifi(){
     if ps -p $(cat /dev/shm/routertools_pid_$1) > /dev/null 2>&1; then
         crit_error "There is an instance of this daemon already running."
     fi
-    
+
     export current_iface="$1"
     load_prefs_iface "$1"
     ledctl rmlock 1 &>/dev/null
@@ -2541,7 +2541,7 @@ daemon_sighup(){
     echo "Recieved SIGHUP, reloading configuration."
     load_prefs
     [[ "$daemon_type" != "inet" ]] && load_prefs_iface "$current_iface"
-    
+
     # Reapply SQM
     if [[ "$daemon_type" == "inet" ]]; then
         sqm_disable

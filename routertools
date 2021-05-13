@@ -119,6 +119,7 @@ Help(){
     echo "  --daemon-stop [AP]         stops the check/watchdog daemon for the selected AP"
     echo "  --daemon-inet              starts the check/watchdog daemon for the internet interface. Please only use this in a (systemd) service"
     echo "  --daemon-stop-inet         stops the check/watchdog daemon for the internet interface"
+    echo "  --daemon-reload            reloads configuration for active daemons without restarting them"
     echo "  --list-daemons             lists active daemons and PIDs"
     echo "  -h, --help                 show this help and quit"
     echo "  -v, --version              show version info and quit"
@@ -2372,6 +2373,7 @@ daemon_inet(){
     echo $daemon_pid > /dev/shm/routertools_pid_$daemon_type
     chmod og+xr /dev/shm/routertools_pid_$daemon_type
     trap daemon_term SIGTERM SIGINT
+    trap daemon_sighup SIGHUP
 
     # In case of unset variable
     if [[ $daemon_manage_inet_every -eq $daemon_manage_inet_every ]]; then
@@ -2435,6 +2437,7 @@ daemon_wifi(){
     echo $daemon_pid > /dev/shm/routertools_pid_$daemon_type
     chmod og+xr /dev/shm/routertools_pid_$daemon_type
     trap daemon_term SIGTERM SIGINT
+    trap daemon_sighup SIGHUP
 
     # In case of unset variable
     if [[ $daemon_manage_wifi_every -eq $daemon_manage_wifi_every ]]; then
@@ -2532,6 +2535,12 @@ stop_daemon_wifi(){
 
 }
 
+daemon_sighup(){
+    echo "Recieved SIGHUP, reloading configuration."
+    load_prefs
+    load_prefs_iface "$1"
+}
+
 list_daemons(){
 
     echo "x86routertools processes running in background:"
@@ -2549,7 +2558,23 @@ list_daemons(){
         fi
 
     done
-    exit 0
+}
+
+reload_all_daemons(){
+    for i in $(find /dev/shm/* | grep '/dev/shm/routertools_pid_'); do
+
+        if [[ $i != "" ]]; then
+            daemon_type=$(echo $i | sed 's/\/dev\/shm\/routertools_pid_//g')
+            daemon_pid=$(cat $i)
+            if ps -p $daemon_pid > /dev/null 2>&1; then
+                kill -SIGHUP $daemon_pid 2>/dev/null
+                echo "Sent reload configuration request to daemon: $daemon_type"
+            else
+                rm $i 2>/dev/null
+            fi
+        fi
+
+    done
 }
 
 # Display error count and exit
@@ -2680,7 +2705,11 @@ parse_cmdline(){
             --daemon-stop|--stop-daemon) checksu || crit_error "You must be root to do this!"
                 stop_daemon_wifi "$2"
                 shift ;;
-
+            
+            --daemon-reload) checksu || crit_error "You must be root to do this!"
+                reload_all_daemons
+                shift ;;
+                
             --daemon-inet) checksu || crit_error "You must be root to do this!"
 
                 if [[ $RT_DAEMONIZE -ne 1 ]]; then

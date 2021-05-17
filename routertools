@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.2.17a"
+version="1.2.18"
 error_count=0
 crit_count=0
 crit_add=0
@@ -2581,13 +2581,16 @@ stop_daemon_wifi(){
 }
 
 daemon_sighup(){
-    echo "Recieved SIGHUP, reloading configuration. ($BASHPID)"
+    echo "Recieved SIGHUP, reloading configuration."
     load_prefs
 
     if [[ "$daemon_type" != "inet" ]]; then
         load_prefs_iface "$current_iface"
-        if [[ "$child_recalib_pid" != "" ]]; then
-            [[ "$is_child" -eq 1 ]] || kill -SIGHUP $child_recalib_pid
+        if [[ $child_recalib_pid -ne 0 ]]; then
+            if [[ "$is_child" -ne 1 ]]; then 
+            echo "Forwarding SIGHUP to $child_recalib_pid"
+            kill -SIGHUP $child_recalib_pid
+            fi
         fi
     fi
 

@@ -555,7 +555,7 @@ initfs_daemon_cfg(){
     echo "" >> $f
     echo "# daemon_ath9k_recalibrate_every -> a number in seconds." >> $f
     echo "# if running the wifi daemon and wifi_driver for that interface includes ath9k, ath9k-recalibrate will be run every X seconds."
-    echo "# recommended is hourly (3600)" >> $f
+    echo "# recommended is hourly (3600). Set to 0 to disable." >> $f
     echo "daemon_ath9k_recalibrate_every=3600" >> $f
     echo "" >> $f
 

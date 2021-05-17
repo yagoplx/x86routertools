@@ -2425,6 +2425,24 @@ daemon_inet(){
 
 }
 
+daemon_wifi_recalibration(){
+
+    while true; do
+        
+        sleep $daemon_ath9k_recalibrate_every
+        sleep_pid=$!
+        wait $sleep_pid 2>/dev/null
+        kill -9 $sleep_pid 2>/dev/null
+        
+        if get_hostapd_status $current_iface; then
+            echo "Automatic ath9k recalibration ($current_iface) in progress..."
+            ath9k_recalibrate $current_iface
+        fi
+
+    done
+    
+}
+
 daemon_wifi(){
     check_iface_exists "$1" || crit_error "Interface $1 is not configured in /etc/routertools.d"
 
@@ -2459,8 +2477,7 @@ daemon_wifi(){
     if [[ $daemon_ath9k_recalibrate_every -gt 0 ]]; then
         if [[ $(echo "$wifi_drivers" | grep -c "ath9k") -gt 0 ]]; then
             echo "ath9k recalibration: enabled on $current_iface every $daemon_ath9k_recalibrate_every seconds"
-            export -f ath9k_recalibrate
-            watch -n $daemon_ath9k_recalibrate_every ath9k_recalibrate "$current_iface" &
+            daemon_wifi_recalibration &
         fi
     fi
 

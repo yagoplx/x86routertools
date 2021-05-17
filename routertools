@@ -1278,6 +1278,7 @@ sqm_enable(){
             elif [[ "$(sysctl net.ipv4.tcp_allowed_congestion_control | grep -iF bbr | wc -l)" -gt 0 ]]; then
                 modprobe tcp_bbr 2>/dev/null
                 echo "Enabled BBRv1 congestion control."
+                sysctl net.ipv4.tcp_congestion_control=bbr
             else
                 echo "Your kernel does not support either BBRv1 or BBRv2, or the modules aren't loaded. Keeping default congestion control."
             fi

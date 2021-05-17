@@ -2587,9 +2587,9 @@ daemon_sighup(){
     if [[ "$daemon_type" != "inet" ]]; then
         load_prefs_iface "$current_iface"
         if [[ $child_recalib_pid -ne 0 ]]; then
-            if [[ "$is_child" -ne 1 ]]; then 
-            echo "Forwarding SIGHUP to $child_recalib_pid"
-            kill -SIGHUP $child_recalib_pid
+            if [[ "$is_child" -ne 1 ]]; then
+                echo "Forwarding SIGHUP to $child_recalib_pid"
+                kill -SIGHUP $child_recalib_pid
             fi
         fi
     fi

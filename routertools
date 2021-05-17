@@ -2427,7 +2427,7 @@ daemon_inet(){
 }
 
 daemon_wifi_recalibration(){
-    
+
     is_child=1
     trap daemon_sighup SIGHUP
 
@@ -2583,7 +2583,7 @@ stop_daemon_wifi(){
 daemon_sighup(){
     echo "Recieved SIGHUP, reloading configuration. ($BASHPID)"
     load_prefs
-    
+
     if [[ "$daemon_type" != "inet" ]]; then
         load_prefs_iface "$current_iface"
         if [[ "$child_recalib_pid" != "" ]]; then

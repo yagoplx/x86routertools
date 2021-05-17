@@ -2579,13 +2579,13 @@ stop_daemon_wifi(){
 daemon_sighup(){
     echo "Recieved SIGHUP, reloading configuration."
     load_prefs
-    if [[ "$daemon_type" != "inet" ]]; then 
-    load_prefs_iface "$current_iface"
+    if [[ "$daemon_type" != "inet" ]]; then
+        load_prefs_iface "$current_iface"
         if [[ "$child_recalib_pid" != "" ]]; then
             kill -SIGHUP $child_recalib_pid
         fi
     fi
-    
+
     # Reapply SQM
     if [[ "$daemon_type" == "inet" ]]; then
         sqm_disable

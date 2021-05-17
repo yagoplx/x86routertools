@@ -553,6 +553,11 @@ initfs_daemon_cfg(){
     echo "# set to 0 if you really want to disable this" >> $f
     echo "daemon_wifi_wait_for_internet_timeout=30" >> $f
     echo "" >> $f
+    echo "# daemon_ath9k_recalibrate_every -> a number in seconds." >> $f
+    echo "# if running the wifi daemon and wifi_driver for that interface includes ath9k, ath9k-recalibrate will be run every X seconds."
+    echo "# recommended is hourly (3600)" >> $f
+    echo "daemon_ath9k_recalibrate_every=3600" >> $f
+    echo "" >> $f
 
     unset f
 }
@@ -1296,7 +1301,7 @@ ath9k_recalibrate(){
         ledctl mklock 3
         echo "Recalibrating special ath9k features on $i"
         ani_off $i
-        sleep 3
+        sleep 2
         ani_on $i
         sleep 6.33
         paprd_off $i
@@ -2417,7 +2422,6 @@ daemon_inet(){
 
 }
 
-
 daemon_wifi(){
     check_iface_exists "$1" || crit_error "Interface $1 is not configured in /etc/routertools.d"
 
@@ -2447,7 +2451,15 @@ daemon_wifi(){
     else
         daemon_manage_wifi_every=30
     fi
-
+    
+    # periodic ath9k-recalibrate
+    if [[ $daemon_ath9k_recalibrate_every -gt 0 ]]; then
+        if [[ $(echo "$wifi_drivers" | grep -c "ath9k") -gt 0 ]]; then
+        export -f ath9k_recalibrate
+        watch -n $daemon_ath9k_recalibrate_every ath9k_recalibrate "$current_iface"
+        fi
+    fi
+    
     while true; do
 
         if ps -p $daemon_child_pid > /dev/null 2>&1; then
@@ -2497,13 +2509,13 @@ daemon_wifi(){
                 GRACE_PERIOD_BLOCK=0
             fi
         fi
-
+        
         # Don't block signals on sleep
         sleep $daemon_manage_wifi_every &
         sleep_pid=$!
         wait $sleep_pid 2>/dev/null
         kill -9 $sleep_pid 2>/dev/null
-
+        
     done
 
 }

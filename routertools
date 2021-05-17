@@ -2427,6 +2427,8 @@ daemon_inet(){
 
 daemon_wifi_recalibration(){
 
+    trap daemon_sighup SIGHUP
+
     while true; do
 
         sleep $daemon_ath9k_recalibrate_every
@@ -2457,6 +2459,7 @@ daemon_wifi(){
     export daemon_type="$1"
     export daemon_pid=$BASHPID
     export daemon_child_pid=""
+    export child_recalib_pid=""
     GRACE_PERIOD=0
     CLEAR=1
     export IS_DAEMON=1
@@ -2478,6 +2481,7 @@ daemon_wifi(){
         if [[ $(echo "$wifi_drivers" | grep -c "ath9k") -gt 0 ]]; then
             echo "ath9k recalibration: enabled on $current_iface every $daemon_ath9k_recalibrate_every seconds"
             daemon_wifi_recalibration &
+            child_recalib_pid=$!
         fi
     fi
 
@@ -2513,21 +2517,23 @@ daemon_wifi(){
                 if [[ $require_internet == true ]]; then
                     if [[ $SECONDS -gt $daemon_wifi_wait_for_internet_timeout ]]; then
                         check_ap "$1" &
+                        daemon_child_pid=$!
                     else
                         if check_inet_short; then
                             check_ap "$1" &
+                            daemon_child_pid=$!
                         else
                             echo "Internet connection unavailable for now"
                         fi
                     fi
                 else
                     check_ap "$1" &
+                    daemon_child_pid=$!
                 fi
 
-                [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
-                daemon_child_pid=$!
                 export daemon_child_pid=$daemon_child_pid
                 GRACE_PERIOD_BLOCK=0
+                [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
             fi
         fi
 
@@ -2573,8 +2579,13 @@ stop_daemon_wifi(){
 daemon_sighup(){
     echo "Recieved SIGHUP, reloading configuration."
     load_prefs
-    [[ "$daemon_type" != "inet" ]] && load_prefs_iface "$current_iface"
-
+    if [[ "$daemon_type" != "inet" ]]; then 
+    load_prefs_iface "$current_iface"
+        if [[ "$child_recalib_pid" != "" ]]; then
+            kill -SIGHUP $child_recalib_pid
+        fi
+    fi
+    
     # Reapply SQM
     if [[ "$daemon_type" == "inet" ]]; then
         sqm_disable

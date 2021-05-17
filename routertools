@@ -2378,6 +2378,7 @@ daemon_inet(){
     export daemon_child_pid=""
     GRACE_PERIOD=0
     export IS_DAEMON=1
+    is_child=0
 
     echo $daemon_pid > /dev/shm/routertools_pid_$daemon_type
     chmod og+xr /dev/shm/routertools_pid_$daemon_type
@@ -2426,7 +2427,8 @@ daemon_inet(){
 }
 
 daemon_wifi_recalibration(){
-
+    
+    is_child=1
     trap daemon_sighup SIGHUP
 
     while true; do
@@ -2463,6 +2465,7 @@ daemon_wifi(){
     GRACE_PERIOD=0
     CLEAR=1
     export IS_DAEMON=1
+    is_child=0
 
     echo $daemon_pid > /dev/shm/routertools_pid_$daemon_type
     chmod og+xr /dev/shm/routertools_pid_$daemon_type
@@ -2482,6 +2485,7 @@ daemon_wifi(){
             echo "ath9k recalibration: enabled on $current_iface every $daemon_ath9k_recalibrate_every seconds"
             daemon_wifi_recalibration &
             child_recalib_pid=$!
+            export child_recalib_pid=$child_recalib_pid
         fi
     fi
 
@@ -2577,12 +2581,13 @@ stop_daemon_wifi(){
 }
 
 daemon_sighup(){
-    echo "Recieved SIGHUP, reloading configuration."
+    echo "Recieved SIGHUP, reloading configuration. ($BASHPID)"
     load_prefs
+    
     if [[ "$daemon_type" != "inet" ]]; then
         load_prefs_iface "$current_iface"
         if [[ "$child_recalib_pid" != "" ]]; then
-            kill -SIGHUP $child_recalib_pid
+            [[ "$is_child" -eq 1 ]] || kill -SIGHUP $child_recalib_pid
         fi
     fi
 

@@ -1272,9 +1272,11 @@ sqm_enable(){
         if [[ $(sysctl net.ipv4.tcp_congestion_control | grep -i bbr | wc -l) -eq 0 ]]; then
 
             if [[ "$(sysctl net.ipv4.tcp_allowed_congestion_control | grep -iF bbr2 | wc -l)" -gt 0 ]]; then
+                modprobe tcp_bbr2 2>/dev/null
                 echo "Enabled BBRv2 congestion control."
                 sysctl net.ipv4.tcp_congestion_control=bbr2
             elif [[ "$(sysctl net.ipv4.tcp_allowed_congestion_control | grep -iF bbr | wc -l)" -gt 0 ]]; then
+                modprobe tcp_bbr 2>/dev/null
                 echo "Enabled BBRv1 congestion control."
             else
                 echo "Your kernel does not support either BBRv1 or BBRv2, or the modules aren't loaded. Keeping default congestion control."
@@ -2455,8 +2457,9 @@ daemon_wifi(){
     # periodic ath9k-recalibrate
     if [[ $daemon_ath9k_recalibrate_every -gt 0 ]]; then
         if [[ $(echo "$wifi_drivers" | grep -c "ath9k") -gt 0 ]]; then
+            echo "ath9k recalibration: enabled on $current_iface every $daemon_ath9k_recalibrate_every seconds"
             export -f ath9k_recalibrate
-            watch -n $daemon_ath9k_recalibrate_every ath9k_recalibrate "$current_iface"
+            watch -n $daemon_ath9k_recalibrate_every ath9k_recalibrate "$current_iface" &
         fi
     fi
 

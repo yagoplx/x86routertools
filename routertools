@@ -2428,19 +2428,19 @@ daemon_inet(){
 daemon_wifi_recalibration(){
 
     while true; do
-        
+
         sleep $daemon_ath9k_recalibrate_every
         sleep_pid=$!
         wait $sleep_pid 2>/dev/null
         kill -9 $sleep_pid 2>/dev/null
-        
+
         if get_hostapd_status $current_iface; then
             echo "Automatic ath9k recalibration ($current_iface) in progress..."
             ath9k_recalibrate $current_iface
         fi
 
     done
-    
+
 }
 
 daemon_wifi(){

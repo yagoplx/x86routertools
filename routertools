@@ -1496,7 +1496,7 @@ ap_start(){
 
         if [[ "$wifi_txpower" != "auto" ]]; then
             if [[ $wifi_txpower -gt 0 ]]; then
-            iw phy$phy set txpower $wifi_txpower 2>/dev/null
+                iw phy$phy set txpower $wifi_txpower 2>/dev/null
             fi
         else
             iw phy$phy set txpower auto
@@ -1531,11 +1531,11 @@ ap_start(){
         elif [[ "$wifi_ani" == "false" ]]; then
             ani_off $i 2>/dev/null
         fi
-        
+
         if [[ $wifi_distance -gt 0 ]]; then
             iw phy$phy set distance $wifi_distance
         fi
-        
+
         if [[ "$wifi_darkstat_port" != "" ]]; then
             [[ $wifi_darkstat_port -gt 0 ]] || error "wifi_darkstat_port must be a port number > 0!"
             echo "Restarting darkstat for $i on port $wifi_darkstat_port"

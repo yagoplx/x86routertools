@@ -466,8 +466,6 @@ initfs(){
         echo "wifi_dynack=true" >> $f
         echo "" >> $f
         echo "# wifi_paprd -> a boolean. true enables digital predistortion, only works on Atheros cards." >> $f
-        echo "# paprd compensates for signal distortion at higher rates and allows higher rates at higher power levels (+range)" >> $f
-        echo "# WARNING: there are reports of paprd damaging some older Atheros ath9k cards, but this has probably been fixed." >> $f
         echo "wifi_paprd=false" >> $f
         echo "" >> $f
         echo "# wifi_retry_short -> a number. sets the limit of times the AP will retry sending a packet before dropping it." >> $f
@@ -911,7 +909,7 @@ dynack_off(){
     for i in $wifi_ap_interfaces; do
         #check_iface_exists $i
         getphy $i
-        iw phy$phy set distance 100m >/dev/null 2>&1 || error "Failed to set parameter"
+        iw phy$phy set distance 100 >/dev/null 2>&1 || error "Failed to set parameter"
         echo "Set dynack -> 0 on $i"
     done
 
@@ -1288,7 +1286,6 @@ sqm_enable(){
 }
 
 # ANI and PAPRD recalibration
-# Probably doesn't work
 ath9k_recalibrate(){
 
     checksu || crit_error "You must be root to do this."
@@ -1300,18 +1297,25 @@ ath9k_recalibrate(){
     fi
 
     for i in $wifi_ap_interfaces; do
+        load_prefs_iface $i
         ledctl periodic
         ledctl mklock 3
-        echo "Recalibrating special ath9k features on $i"
+        echo "Recalibrating special ath9k features on $i:"
+
+        if [[ "$wifi_ani" == "true" ]]; then
         ani_off $i
-        sleep 2
+        sleep 3
         ani_on $i
-        sleep 6.33
+        echo "ani: done"
+        fi
+        
+        if [[ "$wifi_paprd" == "true" ]]; then
         paprd_off $i
-        sleep 6.33
+        sleep 3
         paprd_on $i
-        sleep 6.33
-        dynack_on $i
+        echo "paprd: done"
+        fi
+
         ledctl rmlock 3
         ledctl blink
     done

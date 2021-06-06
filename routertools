@@ -479,8 +479,11 @@ initfs(){
         echo "# wifi_ani -> a boolean. false disables adaptive noise immunity, only works on Atheros cards." >> $f
         echo "wifi_ani=true" >> $f
         echo "" >> $f
-        echo "# wifi_coverage -> a number. sets coverage class in microsec of air propagation time. default is 3. setting this disables dynack." >> $f
-        echo "wifi_coverage=3" >> $f
+        echo "# wifi_coverage -> a number. sets coverage class in microsec of air propagation time. default is unset." >> $f
+        echo "wifi_coverage=" >> $f
+        echo "" >> $f
+        echo "# wifi_distance -> a number. sets maximum ack timeout by distance in meters. default is unset. setting this disables dynack." >> $f
+        echo "wifi_distance=" >> $f
         echo "" >> $f
         echo "# wifi_disable_cck -> a boolean. true disables legacy b/g rates." >> $f
         echo "wifi_disable_cck=true" >> $f
@@ -1483,17 +1486,18 @@ ap_start(){
         fi
 
         if [[ $wifi_retry_short -gt 0 ]] && [[ $wifi_retry_long -gt 0 ]]; then
-            iw phy$phy set retry short $wifi_retry_short || error "failed to set wifi_retry_short, continuing"
-            iw phy$phy set retry long $wifi_retry_long || error "failed to set wifi_retry_long, continuing"
+            iw phy$phy set retry short $wifi_retry_short
+            iw phy$phy set retry long $wifi_retry_long
         fi
 
         if [[ $wifi_coverage -gt 0 ]]; then
-            iw phy$phy set coverage $wifi_coverage || error "failed to set coverage class, continuing"
+            iw phy$phy set coverage $wifi_coverage
         fi
 
         if [[ "$wifi_txpower" != "auto" ]]; then
-            [[ $wifi_txpower -gt 0 ]] || error "wifi_txpower must be a number > 0!"
+            if [[ $wifi_txpower -gt 0 ]]; then
             iw phy$phy set txpower $wifi_txpower 2>/dev/null
+            fi
         else
             iw phy$phy set txpower auto
         fi
@@ -1527,7 +1531,11 @@ ap_start(){
         elif [[ "$wifi_ani" == "false" ]]; then
             ani_off $i 2>/dev/null
         fi
-
+        
+        if [[ $wifi_distance -gt 0 ]]; then
+            iw phy$phy set distance $wifi_distance
+        fi
+        
         if [[ "$wifi_darkstat_port" != "" ]]; then
             [[ $wifi_darkstat_port -gt 0 ]] || error "wifi_darkstat_port must be a port number > 0!"
             echo "Restarting darkstat for $i on port $wifi_darkstat_port"

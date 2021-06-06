@@ -354,7 +354,7 @@ initfs(){
         echo "notify_mode=none" >> $f
         echo "" >> $f
         echo "# inet_check_timeout -> a number in seconds. this is for how long it'll wait for an external address to respond" >> $f
-        echo "# or for dns names to be resolved. higher values make the internet check more lenient, and perhaps slower." >> $f
+        echo "# or for dns names to be resolved." >> $f
         echo "inet_check_timeout=6" >> $f
         echo "" >> $f
         echo "# silence_check_services -> a boolean. if true, you won't get a warning about things not being installed. " >> $f
@@ -364,21 +364,19 @@ initfs(){
         echo "# it makes additional randomness for the OS. however, it may cause high CPU usage on computers without hardware RNG generators." >> $f
         echo "enable_rngd=false" >> $f
         echo "" >> $f
-        echo "# enable_cake_sqm -> a boolean. if true, CAKE queue discipline will be applied" >> $f
-        echo "# in a way similar to sqm_scripts. This helps with bufferbloat and latency." >> $f
-        echo "# it is applied to most, if not all, interfaces, except for lo." >> $f
+        echo "# enable_cake_sqm -> a boolean. if true, CAKE queue discipline will be applied to interfaces" >> $f
+        echo "# in a way similar to sqm_scripts. This helps with bufferbloat." >> $f
         echo "enable_cake_sqm=true" >> $f
         echo "" >> $f
-        echo "# enable_cake_ack_filter -> a boolean. if true, CAKE ack filtering will be enabled on all interfaces." >> $f
-        echo "# to improve performance on some networks (esp. asymmetric links). this option may cause problems, and needs testing." >> $f
+        echo "# enable_cake_ack_filter -> a boolean. if true, CAKE ack filtering will be enabled on suitable interfaces." >> $f
         echo "enable_cake_ack_filter=false" >> $f
         echo "" >> $f
         echo "# sqm_ack_filter_aggressive -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
-        echo "# will be set to aggressive mode on all interfaces. use this on highly asymmetric links like satellite." >> $f
+        echo "# will be set to aggressive mode on all interfaces." >> $f
         echo "sqm_ack_filter_aggressive=false" >> $f
         echo "" >> $f
         echo "# ack_filter_no_ppp -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
-        echo "# will not be enabled on ppp interfaces. try this if you encounter problems with ppp" >> $f
+        echo "# will not be enabled on ppp interfaces." >> $f
         echo "ack_filter_no_ppp=false" >> $f
         echo "" >> $f
         echo "# restart_services_for_wifi -> a boolean. if true, important_services will be automatically restarted alongside wifi interfaces." >> $f
@@ -393,13 +391,12 @@ initfs(){
         echo "sqm_inet_download=" >> $f
         echo "" >> $f
         echo "# sqm_wash_markings -> a boolean. if true, washes out traffic type markings inbound." >> $f
-        echo "# use this if you don't trust the ISP to get them right." >> $f
         echo "sqm_wash_markings=false" >> $f
         echo "" >> $f
-        echo "# sqm_use_overheads -> a boolean. if true, sqm will use some predefined overhead keywords for packet size compensation. may help with bufferbloat." >> $f
+        echo "# sqm_use_overheads -> a boolean. if true, sqm will use some predefined overhead keywords for packet size compensation." >> $f
         echo "sqm_use_overheads=true" >> $f
         echo "" >> $f
-        echo "# sqm_wifi_wash -> a boolean. if true, washes diffserv markings on wifi interfaces, for when you don't trust WMM to get things right." >> $f
+        echo "# sqm_wifi_wash -> a boolean. if true, washes diffserv markings on wifi interfaces." >> $f
         echo "# this will automatically set besteffort on the wifi interfaces." >> $f
         echo "sqm_wifi_wash=false" >> $f
         echo "" >> $f
@@ -428,6 +425,8 @@ initfs(){
         echo "# Same goes for the hostapd configuration file except the filename should end with _hostapd.conf" >> $f
         echo "" >> $f
         echo "# WIRELESS INTERFACE OPTIONS #" >> $f
+        echo "# Check https://wiki.dd-wrt.com/wiki/index.php/Atheros/ath_wireless_settings for explanations." >> $f
+        echo "" >> $f
         echo "# hostapd_wait_for_secs -> seconds to wait for hostapd to ready interfaces" >> $f
         echo "# 15 seconds is a reasonable number. increase this if you use ACS or a lot of virtual interfaces." >> $f
         echo "hostapd_wait_for_secs=15 " >> $f
@@ -440,7 +439,6 @@ initfs(){
         echo "wifi_powersave=true" >> $f
         echo "" >> $f
         echo "# wifi_regdomain -> if set to a two-letter country code like GY, will set this as the system's regulatory domain" >> $f
-        echo "# before starting the AP. This affects transmit power and usable channels." >> $f
         echo "wifi_regdomain=GY" >> $f
         echo "" >> $f
         echo "# wifi_drivers -> a list of kernel modules to remove and insert upon starting this AP." >> $f
@@ -461,8 +459,7 @@ initfs(){
         echo "# if you are only using one AP on this network card you need not set this." >> $f
         echo "# wifi_virtual_interfaces=" >> $f
         echo "" >> $f
-        echo "# wifi_dynack -> a boolean. true enables dynamic ack timeout estimation algorithm, only works on Atheros cards" >> $f
-        echo "# dynack may significantly increase connection speed with far away/ weak clients. dynack is not supported by all cards." >> $f
+        echo "# wifi_dynack -> a boolean. true enables dynamic ack timeout estimation algorithm, only works on ath9k cards" >> $f
         echo "wifi_dynack=true" >> $f
         echo "" >> $f
         echo "# wifi_paprd -> a boolean. true enables digital predistortion, only works on Atheros cards." >> $f
@@ -477,7 +474,6 @@ initfs(){
         echo "wifi_retry_long=2" >> $f
         echo "" >> $f
         echo "# wifi_lnamix -> a boolean. true enables low noise amplifier mixing, only works on Atheros cards." >> $f
-        echo "# lnamix might help signal strength." >> $f
         echo "wifi_lnamix=true" >> $f
         echo "" >> $f
         echo "# wifi_ani -> a boolean. false disables adaptive noise immunity, only works on Atheros cards." >> $f
@@ -486,8 +482,7 @@ initfs(){
         echo "# wifi_coverage -> a number. sets coverage class in microsec of air propagation time. default is 3. setting this disables dynack." >> $f
         echo "wifi_coverage=3" >> $f
         echo "" >> $f
-        echo "# wifi_disable_cck -> a boolean. true disables legacy b/g rates, disallowing legacy clients and increasing airtime efficiency." >> $f
-        echo "# only has any effect with lots of connected stations, may have adverse effects otherwise." >> $f
+        echo "# wifi_disable_cck -> a boolean. true disables legacy b/g rates." >> $f
         echo "wifi_disable_cck=true" >> $f
         echo "" >> $f
         echo "# NETWORKING OPTIONS #" >> $f

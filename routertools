@@ -1303,17 +1303,17 @@ ath9k_recalibrate(){
         echo "Recalibrating special ath9k features on $i:"
 
         if [[ "$wifi_ani" == "true" ]]; then
-        ani_off $i
-        sleep 3
-        ani_on $i
-        echo "ani: done"
+            ani_off $i
+            sleep 3
+            ani_on $i
+            echo "ani: done"
         fi
-        
+
         if [[ "$wifi_paprd" == "true" ]]; then
-        paprd_off $i
-        sleep 3
-        paprd_on $i
-        echo "paprd: done"
+            paprd_off $i
+            sleep 3
+            paprd_on $i
+            echo "paprd: done"
         fi
 
         ledctl rmlock 3

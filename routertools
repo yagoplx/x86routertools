@@ -287,19 +287,19 @@ resetcfg(){
     # Resets all configuration in /etc/routertools.d
     checksu || crit_error "You must be root to execute this function."
 
-	if [[ -d /etc/routertools.d ]]; then
-    	echo "This will delete EVERYTHING under /etc/routertools.d"
-    	echo "Are you sure you want to do this?"
-    	echo "[Enter-> Continue] [Ctrl+C-> Cancel]"
+    if [[ -d /etc/routertools.d ]]; then
+        echo "This will delete EVERYTHING under /etc/routertools.d"
+        echo "Are you sure you want to do this?"
+        echo "[Enter-> Continue] [Ctrl+C-> Cancel]"
 
-    	# "enter" detection
-    	read x
-    	unset x
+        # "enter" detection
+        read x
+        unset x
 
-    	rm -r /etc/routertools.d
-	fi
-	
-	echo "Initializing configuration..."
+        rm -r /etc/routertools.d
+    fi
+
+    echo "Initializing configuration..."
     initfs
     initfs_daemon_cfg
     return $?

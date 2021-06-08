@@ -33,14 +33,14 @@ x86routertools comes with many verbs that can be used to get information on the 
 
 For example, you can check what MCS rates your phone is using on the connection, to measure the quality of the service it is getting:
 * Get the MAC address of the device by looking at the list of connected devices:
-* `routertools ls`
+* `$ routertools ls`
 * Then, you can pull up the real-time rate display with the AP's interface name:
-* `routertools display-rates wlan0 aa:bb:cc:dd:ee:ff`
+* `$ routertools display-rates wlan0 aa:bb:cc:dd:ee:ff`
 
 You can also toggle many runtime options of a wireless interface. For example, to turn on LNA mixing on ath9k cards (the daemon can do this for you, too):
-* `routertools lnamix-on wlan0`
+* `# routertools lnamix-on wlan0`
 * Or, to set it on all APs on the system:
-* `routertools lnamix-on`
+* `# routertools lnamix-on`
 
 Calling `routertools --help` should be enough to get you a full, descriptive list of commands.
 
@@ -79,13 +79,10 @@ x86routertools is normally installed to `/usr/bin`. Other necessary directories 
 
 To install it on your system:
 * Clone the repository somewhere:
-* `git clone https://github.com/yagoplx/x86routertools.git`
-* `cd x86routertools`
-* Move the files around:
-* `cp -v routertools /usr/bin/`
-* `cp -v systemd/* /etc/systemd/system/`
-* Populate the configuration directories:
-* `routertools reset-cfg`
+* `$ git clone https://github.com/yagoplx/x86routertools.git`
+* `$ cd x86routertools`
+* Run make install:
+* `# make install`
 
 It should be ready for configuration, though you may also want to run a `systemctl daemon-reload` if you want to try out the daemon right away.
 
@@ -96,8 +93,8 @@ Each wireless interface should have two files in there: a interfacename.conf, an
 As for the internet facing interface, you should set up scripts to set them up and down at `/etc/routertools.d/scripts`. The default is to just call the Arch Linux pppoe-start and pppoe-stop commands for PPPoE. The daemon will call the stop script when it restarts the interface, and then the start script. The command line tools also can use these scripts as well.
 
 You can have the daemon start on boot for the standard wifi router experience:
-* `sudo systemctl enable routertoolsd-inet`
-* `sudo systemctl enable routertoolsd-wifi@interface_name`
+* `# systemctl enable routertoolsd-inet`
+* `# systemctl enable routertoolsd-wifi@interface_name`
 
 #### <a name="cfgopt"></a>Configuration options
 Configuration is system-wide and is done via files in `/etc/routertools.d`    

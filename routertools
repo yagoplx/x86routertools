@@ -287,15 +287,19 @@ resetcfg(){
     # Resets all configuration in /etc/routertools.d
     checksu || crit_error "You must be root to execute this function."
 
-    echo "This will delete EVERYTHING under /etc/routertools.d"
-    echo "Are you sure you want to do this?"
-    echo "[Enter-> Continue] [Ctrl+C-> Cancel]"
+	if [[ -d /etc/routertools.d ]]; then
+    	echo "This will delete EVERYTHING under /etc/routertools.d"
+    	echo "Are you sure you want to do this?"
+    	echo "[Enter-> Continue] [Ctrl+C-> Cancel]"
 
-    # "enter" detection
-    read x
-    unset x
+    	# "enter" detection
+    	read x
+    	unset x
 
-    rm -r /etc/routertools.d
+    	rm -r /etc/routertools.d
+	fi
+	
+	echo "Initializing configuration..."
     initfs
     initfs_daemon_cfg
     return $?
@@ -317,9 +321,9 @@ initfs(){
     fi
 
     if [[ ! -d ${PREFIX}routertools.d ]]; then
-        echo "Attempting to create ${PREFIX}routertools.d"
+        echo "Populating ${PREFIX}routertools.d..."
         mkdir ${PREFIX}routertools.d || crit_error
-        echo "Creating basic directory structure in ${PREFIX}routertools.d"
+        ifv echo "Creating basic directory structure in ${PREFIX}routertools.d"
         mkdir ${PREFIX}routertools.d/wifi-access-points
         mkdir ${PREFIX}routertools.d/scripts
 
@@ -330,15 +334,15 @@ initfs(){
         initfile ${PREFIX}routertools.d/x86routertools.conf
         initfile ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
 
-        echo "Setting permissions on ${PREFIX}routertools.d"
+        ifv echo "Setting permissions on ${PREFIX}routertools.d"
         chmod 700 ${PREFIX}routertools.d/*
         chmod og+xr ${PREFIX}routertools.d
         chmod og+xr ${PREFIX}routertools.d/x86routertools.conf
         chmod og+xr ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
         chmod og+xr ${PREFIX}routertools.d/wifi-access-points
 
-        echo "Downloading example hostapd.conf from w1.fi"
-        wget https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
+        echo "Downloading example hostapd.conf from w1.fi. Please wait..."
+        wget -q https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
 
         # Hostapd file may contain plaintext passwords
         chmod -R 700 ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf
@@ -592,7 +596,7 @@ initfs_daemon_cfg(){
     echo "daemon_wifi_wait_for_internet_timeout=120" >> $f
     echo "" >> $f
     echo "# daemon_ath9k_recalibrate_every -> a number in seconds." >> $f
-    echo "# if running the wifi daemon and wifi_driver for that interface includes ath9k, ath9k-recalibrate will be run every X seconds."
+    echo "# if running the wifi daemon and wifi_driver for that interface includes ath9k, ath9k-recalibrate will be run every X seconds." >> $f
     echo "# recommended is hourly (3600). Set to 0 to disable." >> $f
     echo "daemon_ath9k_recalibrate_every=0" >> $f
     echo "" >> $f
@@ -1441,7 +1445,6 @@ load_prefs_error(){
         echo "I'm going to generate them now."
         rm -r /etc/routertools.d &>/dev/null
         initfs
-        [[ -f /etc/routertools.d/daemon.conf ]] && _exit "Done. Try running x86routertools again."
     fi
 
 }
@@ -1453,7 +1456,6 @@ load_prefs_daemon_error(){
     else
         echo "Generating new daemon.conf in /etc/routertools.d/ ..."
         initfs_daemon_cfg
-        _exit "Done. Try running x86routertools again."
     fi
 
 }

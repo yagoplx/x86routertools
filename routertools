@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.2.18"
+version="1.3.0"
 error_count=0
 crit_count=0
 crit_add=0
@@ -66,53 +66,70 @@ Copyright(){
 # Descriptive help function
 Help(){
 
-    echo "Usage: x86routertools [ARGUMENTS]"
-    echo "Arguments preceded by an asterisk(*) might not work outside of ath9k devices"
-    echo "[] indicates a necessary argument. {} indicates an optional one."
-    echo "List of arguments:"
+    echo "Usage: x86routertools [arguments]"
     echo ""
-    echo "  edit [AP]		   edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
+    echo "  edit {AP}		           edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
+    echo ""
     echo "  status-internet, inet      checks if internet access is present and exits"
     echo "  status-wifi, wifi {AP}     checks if the wifi AP(s) is/are up and running and exits"
     echo "  status-services, srv       checks if important services are running and exits"
     echo "  status, s                  shows a shortened version of all statuses"
+    echo ""
     echo "  ap-list, list-aps, la      shows a list of all AP names in routertools"
+    echo ""
     echo "  info-internet, iinet       shows information about the default route (internet)"
     echo "  info-wifi, iwifi {AP}      shows information about the wifi APs"
     echo "  info-services, isrv        shows all important services status verbosely"
     echo "  info-qdisc, iqdisc         shows all configured queue disciplines"
     echo "  info, i                    shows a shortened version of all information commands"
+    echo ""
     echo "* display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution, requires the MAC address"
     echo "* display-airtime [AP] [MAC] displays airtime usage for a given device, requires MAC address, 100ms resolution"
     echo "* display-ani [AP]           displays runtime info about Adaptive Noise Immunity, 100ms resolution"
     echo "  display-local-network      displays all connected devices to this machine (ARP), 1s resolution"
     echo "  display-qdisc [interface]  displays queue discipline statistics for the given interface, 100ms resolution"
+    echo ""
     echo "  show-local-network, ls     show all connected devices to this machine, once"
+    echo ""
     echo "  check-internet             checks and runs start-internet script if connection unavailable, checks if DNS is working and jumpstarts it"
     echo "  check-wifi {AP}            checks and restarts the wifi AP(s) if not started"
     echo "  check, c                   checks both (all) wifi APs and internet, starts them automatically"
+    echo ""
     echo "  start-internet             runs the start-internet script"
     echo "  stop-internet              runs the stop-internet script"
     echo "  start-services             starts inactive important services"
     echo "  start-wifi {AP}            (re)starts selected AP or all APs"
     echo "  stop-wifi {AP}             stops selected AP or all APs"
+    echo ""
     echo "  restart-services           restarts important services"
     echo "  restart-wifi {AP}          restarts the selected AP or all APs"
     echo "  restart-internet"
+    echo ""
     echo "  qdisc-on, qdisc            apply routertools's per-category queue disciplines"
     echo "  qdisc-off                  return queue disciplines to the system defaults"
+    echo ""
     echo "  sysctl-install             installs optimized options to /etc/sysctl.d and reloads sysctl"
+    echo ""
     echo "* paprd-on {AP}              enables digital predistortion on all APs or on {AP} only"
     echo "* paprd-off {AP}             disables digital predistortion on all APs or on {AP} only"
+    echo ""
     echo "  dynack-on {AP}             enables ack timeout estimation on all APs or on {AP} only"
     echo "  dynack-off {AP}            disables ack timeout estimation on all APs or on {AP} only"
+    echo ""
     echo "* ani-on {AP}                enables adaptive noise immunity on all APs or on {AP} only"
     echo "* ani-off {AP}               disables adaptive noise immunity on all APs or on {AP} only"
+    echo ""
     echo "* lnamix-on {AP}             enables low noise amplifier signal mixing on all APs or on {AP} only"
     echo "* lnamix-off {AP}            disables low noise amplifier signal mixing on all APs or on {AP} only"
+    echo ""
     echo "* ath9k-recalibrate {AP}     recalibrates paprd & ani on atheros cards, best used in a cron job"
+    echo ""
+    echo "  frame-opt-on {AP}          enables custom framesize optimization on all APs or on {AP} only"
+    echo "  frame-opt-off {AP}         disables custom framesize optimization on all APs or on {AP} only"
+    echo ""
     echo "  powersave-on {AP}          enables power saving features on all APs or on {AP} only"
     echo "  powersave-off {AP}         disables power saving features on all APs or on {AP} only"
+    echo ""
     echo "  reset-config, reset-cfg    resets x86routertools configuration files to default"
     echo ""
     echo "  --daemon [AP]              starts the check/watchdog daemon for the selected AP. Please only use this in a (systemd) service"
@@ -121,14 +138,18 @@ Help(){
     echo "  --daemon-stop-inet         stops the check/watchdog daemon for the internet interface"
     echo "  --daemon-reload            reloads configuration for active daemons without restarting them"
     echo "  --list-daemons             lists active daemons and PIDs"
+    echo ""
     echo "  -h, --help                 show this help and quit"
     echo "  -v, --version              show version info and quit"
     echo "  -q, --quiet                silence some routertools dialog to make output better to parse"
     echo "  -V, --verbose              operate verbosely"
     echo "  -F, --nofail               keep going even if a critical error happens"
     echo "  -C, --noclear              never clear the screen"
-    echo "  -D                         when combined with --daemon or --daemon-inet, runs these as detached processes. for use outside systemd"
-    echo "  -Z                         disown all jobs on exit"
+    echo "  -D, --detach               when combined with --daemon or --daemon-inet, runs these as detached processes. for use outside systemd"
+    echo "  -Z, --disown               disown all jobs on exit"
+    echo ""
+    echo "Note: Arguments preceded by an asterisk might not work outside of ath9k devices"
+    echo "Note: [] indicates a necessary argument. {} indicates an optional one."
 
 }
 
@@ -138,11 +159,11 @@ Invalid_Help(){
     if [[ $count_arg -eq 1 ]]; then
         Help
         echo
-        echo "x86routertools: Invalid command line option $cmd_arg"
+        ifnq echo "x86routertools: Invalid command line option $cmd_arg"
         exit 1
     elif [[ $count_arg -gt 1 ]]; then
-        echo "x86routertools: Invalid command line option $cmd_arg"
-        echo "Run 'x86routertools -h' for help."
+        ifnq echo "x86routertools: Invalid command line option $cmd_arg"
+        ifnq echo "Run 'x86routertools -h' for help."
         exit 1
     fi
 
@@ -155,7 +176,7 @@ cleanup(){
     rm /dev/shm/routertools.netrec.dns 2>/dev/null
 
     if [[ $quiet != 1 ]]; then
-        _exit "x86routertools was terminated by the user."
+        _exit "x86routertools was terminated."
     else
         exit 0
     fi
@@ -167,8 +188,8 @@ error(){
     # Functions that can error should give their errors to _error functions
     if [[ $quiet != 1 ]]; then
         error_count=$(( $error_count + 1 ))
-        echo " [x86routertools error $error_suffix:" "$@"
-        echo " Happened in ${FUNCNAME[$((1 + $crit_add))]}, call stack: ${FUNCNAME[*]}]" >&2
+        echo "x86routertools error $error_suffix:" "$@" "In function: ${FUNCNAME[$((1 + $crit_add))]}"
+        ifv echo "Call stack: ${FUNCNAME[*]}]"
     fi
     return $?
 
@@ -180,7 +201,7 @@ crit_error(){
     # Jump up on the call stack
     crit_add=1
 
-    error_suffix="(critical)"
+    error_suffix="(FATAL)"
     error "$@"
     unset error_suffix
 
@@ -195,6 +216,12 @@ crit_error(){
 # ifv runs a command only if we are in verbose mode
 ifv(){
     [[ $verbose = "1" ]] && "$@"
+    return $?
+}
+
+# ifnq runs a command only if we are not in quiet mode
+ifnq(){
+    [[ $quiet = "1" ]] || "$@"
     return $?
 }
 
@@ -250,6 +277,7 @@ rootnotify(){
         wall -n "$@"
     fi
 
+    ifnq echo "Sent notification to user $user"
     # Always return 0
     return 0
 }
@@ -297,6 +325,8 @@ initfs(){
 
         initfile ${PREFIX}routertools.d/scripts/stop-internet
         initfile ${PREFIX}routertools.d/scripts/start-internet
+        initfile ${PREFIX}routertools.d/scripts/start-example_interface
+        initfile ${PREFIX}routertools.d/scripts/stop-example_interface
         initfile ${PREFIX}routertools.d/x86routertools.conf
         initfile ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
 
@@ -327,6 +357,14 @@ initfs(){
         echo "# This script is run with stop-internet and alike commands" >> $f
         echo "# Example: pppoe-stop on Arch Linux with a PPPoE modem." >> $f
         echo "pppoe-stop" >> $f
+
+        f="$d/scripts/stop-example_interface"
+        echo "# This script is run with stop-wifi and alike commands" >> $f
+        echo "" >> $f
+
+        f="$d/scripts/start-example_interface"
+        echo "# This script is run with start-wifi and alike commands" >> $f
+        echo "" >> $f
 
         f="$d/x86routertools.conf"
         echo "# x86routertools main configuration file" >> $f
@@ -436,7 +474,7 @@ initfs(){
         echo "wifi_txpower=auto" >> $f
         echo "" >> $f
         echo "# wifi_powersave -> a boolean (true/false). if true, powersaving features will be enabled as soon as the AP is turned on." >> $f
-        echo "wifi_powersave=true" >> $f
+        echo "wifi_powersave=false" >> $f
         echo "" >> $f
         echo "# wifi_regdomain -> if set to a two-letter country code like GY, will set this as the system's regulatory domain" >> $f
         echo "wifi_regdomain=GY" >> $f
@@ -460,24 +498,28 @@ initfs(){
         echo "# wifi_virtual_interfaces=" >> $f
         echo "" >> $f
         echo "# wifi_dynack -> a boolean. true enables dynamic ack timeout estimation algorithm, only works on ath9k cards" >> $f
-        echo "wifi_dynack=true" >> $f
+        echo "wifi_dynack=false" >> $f
         echo "" >> $f
         echo "# wifi_paprd -> a boolean. true enables digital predistortion, only works on Atheros cards." >> $f
-        echo "wifi_paprd=false" >> $f
+        echo "wifi_paprd=true" >> $f
         echo "" >> $f
         echo "# wifi_retry_short -> a number. sets the limit of times the AP will retry sending a packet before dropping it." >> $f
-        echo "# default is 3" >> $f
-        echo "wifi_retry_short=3" >> $f
+        echo "# default is 4" >> $f
+        echo "wifi_retry_short=4" >> $f
         echo "" >> $f
         echo "# wifi_retry_long -> a number. sets the limit of times the AP will retry sending a packet before dropping it in RTS/CTS mode." >> $f
-        echo "# default is 2" >> $f
-        echo "wifi_retry_long=2" >> $f
+        echo "# default is 3" >> $f
+        echo "wifi_retry_long=3" >> $f
+        echo "" >> $f
+        echo "# wifi_frame_optimization -> a boolean. enables custom frame size optimization." >> $f
+        echo "# overrides retries, fragmentation, and MTU related options. " >> $f
+        echo "wifi_frame_optimization=true" >> $f
         echo "" >> $f
         echo "# wifi_lnamix -> a boolean. true enables low noise amplifier mixing, only works on Atheros cards." >> $f
         echo "wifi_lnamix=true" >> $f
         echo "" >> $f
         echo "# wifi_ani -> a boolean. false disables adaptive noise immunity, only works on Atheros cards." >> $f
-        echo "wifi_ani=true" >> $f
+        echo "wifi_ani=false" >> $f
         echo "" >> $f
         echo "# wifi_coverage -> a number. sets coverage class in microsec of air propagation time. default is unset." >> $f
         echo "wifi_coverage=" >> $f
@@ -485,8 +527,8 @@ initfs(){
         echo "# wifi_distance -> a number. sets maximum ack timeout by distance in meters. default is unset. setting this disables dynack." >> $f
         echo "wifi_distance=" >> $f
         echo "" >> $f
-        echo "# wifi_disable_cck -> a boolean. true disables legacy b/g rates." >> $f
-        echo "wifi_disable_cck=true" >> $f
+        echo "# wifi_disable_cck -> a boolean. true disables legacy b/g rates. default is unset." >> $f
+        echo "wifi_disable_cck=" >> $f
         echo "" >> $f
         echo "# NETWORKING OPTIONS #" >> $f
         echo "" >> $f
@@ -542,17 +584,17 @@ initfs_daemon_cfg(){
     echo "daemon_manage_inet_every=60" >> $f
     echo "" >> $f
     echo "# daemon_manage_wifi_every -> a number in seconds. the wifi watchdog will be executed every this amount of time." >> $f
-    echo "daemon_manage_wifi_every=15" >> $f
+    echo "daemon_manage_wifi_every=40" >> $f
     echo "" >> $f
     echo "# daemon_wifi_wait_for_internet_timeout -> a number in seconds." >> $f
     echo "# if running in daemon mode and require_internet is enabled, after this long and internet is still not available wifi will be started anyway." >> $f
     echo "# set to 0 if you really want to disable this" >> $f
-    echo "daemon_wifi_wait_for_internet_timeout=30" >> $f
+    echo "daemon_wifi_wait_for_internet_timeout=120" >> $f
     echo "" >> $f
     echo "# daemon_ath9k_recalibrate_every -> a number in seconds." >> $f
     echo "# if running the wifi daemon and wifi_driver for that interface includes ath9k, ath9k-recalibrate will be run every X seconds."
     echo "# recommended is hourly (3600). Set to 0 to disable." >> $f
-    echo "daemon_ath9k_recalibrate_every=3600" >> $f
+    echo "daemon_ath9k_recalibrate_every=0" >> $f
     echo "" >> $f
 
     unset f
@@ -789,6 +831,75 @@ ani_off(){
 
 }
 
+frame_opt_on(){
+
+    checksu || crit_error "You must be root to toggle this."
+
+    if [[ $@ == "" ]]; then
+        wifi_ap_interfaces="$(get_wifi_iface_list)"
+    else
+        wifi_ap_interfaces="$@"
+    fi
+
+    for i in $wifi_ap_interfaces; do
+        load_prefs_iface $i
+        getphy $i
+
+        iw phy$phy set frag 256
+        ifconfig $i mtu 2304 || ifconfig $i mtu 1900
+        iw phy$phy set retry short 12 || iw phy$phy set retry short 9
+        iw phy$phy set rts off
+
+        if [[ "$wifi_distance" != "" ]]; then
+            iw phy$phy set distance "$wifi_distance"
+        else
+            iw phy$phy set distance 10
+        fi
+
+        if [[ "$wifi_dynack" == "true" ]]; then
+            iw phy$phy set distance auto
+        fi
+
+        echo "Set frame_opt -> 1 on $i"
+    done
+
+}
+
+# Custom frame size optimization
+frame_opt_off(){
+
+    checksu || crit_error "You must be root to toggle this."
+
+    if [[ $@ == "" ]]; then
+        wifi_ap_interfaces="$(get_wifi_iface_list)"
+    else
+        wifi_ap_interfaces="$@"
+    fi
+
+    for i in $wifi_ap_interfaces; do
+        load_prefs_iface $i
+        getphy $i
+
+        iw phy$phy set frag off
+        ifconfig $i mtu 1500
+
+        if [[ "$wifi_retry_short" != "" ]]; then
+            iw phy$phy set retry short "$wifi_retry_short"
+        fi
+
+        if [[ "$wifi_distance" != "" ]]; then
+            iw phy$phy set distance "$wifi_distance"
+        fi
+
+        if [[ "$wifi_dynack" == "true" ]]; then
+            iw phy$phy set distance auto
+        fi
+
+        echo "Set frame_opt -> 0 on $i"
+    done
+
+}
+
 # Enable Digital Predistortion
 paprd_on(){
 
@@ -801,7 +912,7 @@ paprd_on(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         getphy $i
 
         echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/paprd 2>/dev/null || error "Failed to set parameter"
@@ -822,7 +933,7 @@ paprd_off(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         getphy $i
 
         echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/paprd 2>/dev/null || error "Failed to set parameter"
@@ -843,7 +954,7 @@ lnamix_on(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         getphy $i
 
         echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/antenna_diversity 2>/dev/null || error "Failed to set parameter"
@@ -864,7 +975,7 @@ lnamix_off(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         getphy $i
 
         echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/antenna_diversity 2>/dev/null || error "Failed to set parameter"
@@ -885,7 +996,7 @@ dynack_on(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         getphy $i
         iw phy$phy set distance auto || error "Failed to set parameter"
         echo "Set dynack -> 1 on $i"
@@ -905,7 +1016,7 @@ dynack_off(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         getphy $i
         iw phy$phy set distance 100 >/dev/null 2>&1 || error "Failed to set parameter"
         echo "Set dynack -> 0 on $i"
@@ -925,7 +1036,7 @@ powersave_on(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         iw dev $i set power_save on >/dev/null 2>&1 || error "Failed to set parameter"
         echo "Set powersave -> 1 on $i"
     done
@@ -944,7 +1055,7 @@ powersave_off(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
+        load_prefs_iface $i
         iw dev $i set power_save off >/dev/null 2>&1 || error "Failed to set parameter"
         echo "Set powersave -> 0 on $i"
     done
@@ -1399,6 +1510,11 @@ ap_stop(){
         kill $(cat /dev/shm/hostapd_pid_$i) 2>/dev/null || killall hostapd 2>/dev/null
         rm /dev/shm/hostapd_pid_$i 2>/dev/null
         ifconfig $i down 2>/dev/null
+
+        if [[ -f /etc/routertools.d/scripts/stop-$i ]]; then
+        echo "Running custom stop script for interface $i"
+        source /etc/routertools.d/scripts/stop-$i
+        fi
     done
 }
 
@@ -1536,6 +1652,10 @@ ap_start(){
             iw phy$phy set distance $wifi_distance
         fi
 
+        if [[ "$wifi_frame_optimization" == "true" ]]; then
+            frame_opt_on
+        fi
+
         if [[ "$wifi_darkstat_port" != "" ]]; then
             [[ $wifi_darkstat_port -gt 0 ]] || error "wifi_darkstat_port must be a port number > 0!"
             echo "Restarting darkstat for $i on port $wifi_darkstat_port"
@@ -1552,6 +1672,12 @@ ap_start(){
         if [[ "$restart_services_for_wifi" == "true" ]]; then
             restart_services
         fi
+
+        if [[ -f /etc/routertools.d/scripts/start-$i ]]; then
+        echo "Running custom start script for interface $i"
+        source /etc/routertools.d/scripts/start-$i
+        fi
+
     done
     _exit
 
@@ -1625,7 +1751,7 @@ check_ap(){
             ledctl blink
         else
             if get_hostapd_status $i ; then
-                echo "Interface $i is up, in AP mode and its hostapd instance is running. Nothing to do."
+                ifnq echo "Interface $i is up, in AP mode and its hostapd instance is running. Nothing to do."
                 ifv echo "Netstat dump: $(netstat -i | grep -i wlp4s0 | tr -d [:alpha:] | tr -d [:blank:])"
                 ledctl rmlock 1
                 ledctl blink
@@ -1786,7 +1912,7 @@ get_dns_status(){
         kill $ping_pid 2>/dev/null
         return 1
     else
-        echo "Domain name $domain can be resolved."
+        ifnq echo "Domain name $domain can be resolved."
         rm /dev/shm/routertools.netrec.dns 2>/dev/null
         kill $ping_pid 2>/dev/null
         return 0
@@ -1861,7 +1987,7 @@ get_inet_status(){
         rm /dev/shm/routertools.netrec.inet 2>/dev/null
         kill $ping_pid 2>/dev/null
     else
-        echo "External addresses are reachable."
+        ifnq echo "External addresses are reachable."
         rm /dev/shm/routertools.netrec.inet 2>/dev/null
         kill $ping_pid 2>/dev/null
 
@@ -1877,7 +2003,7 @@ get_inet_iface_status(){
     ledctl blink
 
     if [[ $istatus -gt 0 ]]; then
-        echo "Interface $inet_iface is up."
+       ifnq echo "Interface $inet_iface is up."
         return 0
     else
         echo "Interface $inet_iface is down."
@@ -1998,49 +2124,49 @@ check_internet(){
     local addr_dns_4="github.com"
 
     if get_inet_iface_status >/dev/null; then
-        echo "Internet interface test: Online"
+       ifnq echo "Internet interface test: Online"
     else
         echo "Internet interface test: Offline"
         bad_inet_iface=1
     fi
 
     if get_inet_status "1.1.1.1" >/dev/null; then
-        echo "Internet availability test 1 (1.1.1.1): Online"
+       ifnq echo "Internet availability test 1 (1.1.1.1): Online"
     else
         echo "Internet availability test 1 (1.1.1.1): Offline"
         bad_inet_1=1
     fi
 
     if get_inet_status "8.8.8.8" >/dev/null; then
-        echo "Internet availability test 2 (8.8.8.8): Online"
+        ifnq echo "Internet availability test 2 (8.8.8.8): Online"
     else
         echo "Internet availability test 2 (8.8.8.8): Offline"
         bad_inet_2=1
     fi
 
     if get_dns_status "$addr_dns_1" >/dev/null; then
-        echo "DNS availability test 1 ($addr_dns_1): Resolved"
+        ifnq echo "DNS availability test 1 ($addr_dns_1): Resolved"
     else
         echo "DNS availability test 1 ($addr_dns_1): Did not resolve"
         bad_dns_1=1
     fi
 
     if get_dns_status "$addr_dns_2" >/dev/null; then
-        echo "DNS availability test 2 ($addr_dns_2): Resolved"
+        ifnq echo "DNS availability test 2 ($addr_dns_2): Resolved"
     else
         echo "DNS availability test 2 ($addr_dns_2): Did not resolve"
         bad_dns_2=1
     fi
 
     if get_dns_status "$addr_dns_3" >/dev/null; then
-        echo "DNS availability test 3 ($addr_dns_3): Resolved"
+        ifnq echo "DNS availability test 3 ($addr_dns_3): Resolved"
     else
         echo "DNS availability test 3 ($addr_dns_3): Did not resolve"
         bad_dns_3=1
     fi
 
     if get_dns_status "$addr_dns_4" >/dev/null; then
-        echo "DNS availability test 4 ($addr_dns_4): Resolved"
+        ifnq echo "DNS availability test 4 ($addr_dns_4): Resolved"
     else
         echo "DNS availability test 4 ($addr_dns_4): Did not resolve"
         bad_dns_4=1
@@ -2084,7 +2210,7 @@ check_internet(){
         stop_internet
         start_internet
     else
-        echo "Internet interface is working normally"
+        ifnq echo "Internet interface is working normally"
         ledctl rmlock 2
         ledctl blink
     fi
@@ -2096,7 +2222,7 @@ check_internet(){
         ledctl mklock 2
         restart_services
     else
-        echo "DNS lookup is working normally"
+        ifnq echo "DNS lookup is working normally"
         sleep 0.5
         ledctl rmlock 2
         ledctl blink
@@ -2733,10 +2859,10 @@ parse_cmdline(){
             -C|--no-clear) noclear=1
                 shift ;;
 
-            -Z) disown_all_jobs=1
+            -Z|--disown) disown_all_jobs=1
                 shift ;;
 
-            -D) no_service=1
+            -D|--detach) no_service=1
                 shift ;;
 
             --daemon) checksu || crit_error "You must be root to do this!"
@@ -2898,6 +3024,12 @@ parse_cmdline(){
             lnamix-off) lnamix_off "$2"
                 shift ;;
 
+            frame-opt-on) frame_opt_on "$2"
+                shift ;;
+
+            frame-opt-off) frame_opt_off "$2"
+                shift ;;
+
             calib|ath9k-recalibrate) ath9k_recalibrate "$2"
                 shift ;;
 
@@ -2953,9 +3085,7 @@ parse_cmdline ${final_args}
 
 # Handle return value and errors
 if [[ $count_arg -ne 0 ]]; then
-    if [[ $quiet != 1 ]]; then
-        _exit
-    fi
+      ifv _exit
 else
     exit $?
 fi

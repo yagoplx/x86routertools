@@ -1512,8 +1512,8 @@ ap_stop(){
         ifconfig $i down 2>/dev/null
 
         if [[ -f /etc/routertools.d/scripts/stop-$i ]]; then
-        echo "Running custom stop script for interface $i"
-        source /etc/routertools.d/scripts/stop-$i
+            echo "Running custom stop script for interface $i"
+            source /etc/routertools.d/scripts/stop-$i
         fi
     done
 }
@@ -1674,8 +1674,8 @@ ap_start(){
         fi
 
         if [[ -f /etc/routertools.d/scripts/start-$i ]]; then
-        echo "Running custom start script for interface $i"
-        source /etc/routertools.d/scripts/start-$i
+            echo "Running custom start script for interface $i"
+            source /etc/routertools.d/scripts/start-$i
         fi
 
     done
@@ -2003,7 +2003,7 @@ get_inet_iface_status(){
     ledctl blink
 
     if [[ $istatus -gt 0 ]]; then
-       ifnq echo "Interface $inet_iface is up."
+        ifnq echo "Interface $inet_iface is up."
         return 0
     else
         echo "Interface $inet_iface is down."
@@ -2124,14 +2124,14 @@ check_internet(){
     local addr_dns_4="github.com"
 
     if get_inet_iface_status >/dev/null; then
-       ifnq echo "Internet interface test: Online"
+        ifnq echo "Internet interface test: Online"
     else
         echo "Internet interface test: Offline"
         bad_inet_iface=1
     fi
 
     if get_inet_status "1.1.1.1" >/dev/null; then
-       ifnq echo "Internet availability test 1 (1.1.1.1): Online"
+        ifnq echo "Internet availability test 1 (1.1.1.1): Online"
     else
         echo "Internet availability test 1 (1.1.1.1): Offline"
         bad_inet_1=1
@@ -3085,7 +3085,7 @@ parse_cmdline ${final_args}
 
 # Handle return value and errors
 if [[ $count_arg -ne 0 ]]; then
-      ifv _exit
+    ifv _exit
 else
     exit $?
 fi

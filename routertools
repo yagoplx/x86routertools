@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.3.0a"
+version="1.4.0"
 error_count=0
 crit_count=0
 crit_add=0
@@ -53,7 +53,7 @@ alias check_iface_exist=check_iface_exists
 Version(){
 
     echo "x86routertools v$version"
-
+	exit 0
 }
 
 Copyright(){
@@ -385,6 +385,16 @@ initfs(){
         echo "# inet_iface -> the interface that will be checked by" >> $f
         echo "# internet commands, and started by internet scripts. example: enp2s0" >> $f
         echo "inet_iface=ppp0" >> $f
+        echo "" >> $f
+        echo "# dns_check_addresses -> an array." >> $f
+        echo "# can contain up to 4 names to try & resolve on internet tests. example: google.com" >> $f
+		echo "# if unset, will use defaults." >> $f
+        echo "dns_check_addresses=()" >> $f
+        echo "" >> $f
+        echo "# ip_check_addresses -> an array." >> $f
+        echo "# can contain up to 2 IPs to ping on internet tests. example: 8.8.8.8" >> $f
+        echo "# if unset, will use defaults." >> $f
+        echo "ip_check_addresses=()" >> $f
         echo "" >> $f
         echo "# important_services -> a list of systemd services important to this router." >> $f
         echo "# they will be started by the connectivity commands. example: dnsmasq haveged" >> $f
@@ -2109,21 +2119,15 @@ check_internet(){
     local bad_dns_2=0
     local bad_dns_3=0
     local bad_dns_4=0
-
     local reason_1=""
     local reason_2=""
-
     local bad_inet_iface=0
     local bad_inet=0
     local bad_inet_1=0
     local bad_inet_2=0
     local bad_dns=0
 
-    # Names to resolve
-    local addr_dns_1="google-public-dns-a.google.com"
-    local addr_dns_2="a.root-servers.org"
-    local addr_dns_3="www.tp-link.com"
-    local addr_dns_4="github.com"
+	import_addresses
 
     if get_inet_iface_status >/dev/null; then
         ifnq echo "Internet interface test: Online"
@@ -2132,17 +2136,17 @@ check_internet(){
         bad_inet_iface=1
     fi
 
-    if get_inet_status "1.1.1.1" >/dev/null; then
-        ifnq echo "Internet availability test 1 (1.1.1.1): Online"
+    if get_inet_status "$addr_inet_1" >/dev/null; then
+        ifnq echo "Internet availability test 1 ($addr_inet_1): Online"
     else
-        echo "Internet availability test 1 (1.1.1.1): Offline"
+        echo "Internet availability test 1 ($addr_inet_1): Offline"
         bad_inet_1=1
     fi
 
-    if get_inet_status "8.8.8.8" >/dev/null; then
-        ifnq echo "Internet availability test 2 (8.8.8.8): Online"
+    if get_inet_status "$addr_inet_2" >/dev/null; then
+        ifnq echo "Internet availability test 2 ($addr_inet_2): Online"
     else
-        echo "Internet availability test 2 (8.8.8.8): Offline"
+        echo "Internet availability test 2 ($addr_inet_2): Offline"
         bad_inet_2=1
     fi
 
@@ -2232,10 +2236,35 @@ check_internet(){
 
 }
 
+import_addresses(){
+
+	# Reload preferences
+	load_prefs 2>/dev/null
+
+    # Default addresses
+    addr_dns_1="google-public-dns-a.google.com"
+    addr_dns_2="a.root-servers.org"
+    addr_dns_3="www.tp-link.com"
+    addr_dns_4="github.com"
+	addr_inet_1="1.1.1.1"
+	addr_inet_2="8.8.8.8"
+	
+	[[ "${dns_check_addresses[0]}" != "" ]] && addr_dns_1="${dns_check_addresses[0]}"
+	[[ "${dns_check_addresses[1]}" != "" ]] && addr_dns_2="${dns_check_addresses[1]}"
+	[[ "${dns_check_addresses[2]}" != "" ]] && addr_dns_3="${dns_check_addresses[2]}"
+	[[ "${dns_check_addresses[3]}" != "" ]] && addr_dns_4="${dns_check_addresses[3]}"
+
+	[[ "${ip_check_addresses[0]}" != "" ]] && addr_inet_1="${ip_check_addresses[0]}"
+	[[ "${ip_check_addresses[1]}" != "" ]] && addr_inet_2="${ip_check_addresses[1]}"
+	
+    is_int $inet_check_timeout || export inet_check_timeout="4"
+	
+}
+
 # Shorter, faster and less precise internet check with hardcoded values and returns 1 or 0
 check_inet_short(){
 
-    local bad_dns_1=0
+	local bad_dns_1=0
     local bad_dns_2=0
     local bad_dns_3=0
     local bad_dns_4=0
@@ -2243,13 +2272,7 @@ check_inet_short(){
     local bad_inet_1=0
     local bad_inet_2=0
 
-    # Names to resolve
-    local addr_dns_1="google-public-dns-a.google.com"
-    local addr_dns_2="a.root-servers.org"
-    local addr_dns_3="www.tp-link.com"
-    local addr_dns_4="github.com"
-
-    export inet_check_timeout="3"
+	import_addresses
 
     if ! get_inet_iface_status >/dev/null; then
         bad_inet_iface=1
@@ -2259,11 +2282,11 @@ check_inet_short(){
         return 1
     fi
 
-    if ! get_inet_status "1.1.1.1" >/dev/null; then
+    if ! get_inet_status "$addr_inet_1" >/dev/null; then
         bad_inet_1=1
     fi
 
-    if ! get_inet_status "8.8.8.8" >/dev/null; then
+    if ! get_inet_status "$addr_inet_2" >/dev/null; then
         bad_inet_2=1
     fi
 
@@ -2827,9 +2850,9 @@ done
 
 if [[ $count_arg -eq 0 ]]; then
 
-    Version
     echo "No command given, run 'x86routertools -h' for usage."
-    exit 0
+	Version
+	
 else
     if [[ "$@" == "-h" ]] || [[ "$@" == "--help" ]]; then
         true

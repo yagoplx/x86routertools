@@ -1850,7 +1850,11 @@ setup_ap_networking(){
             echo "Enabling PPTP support"
             modprobe nf_nat_pptp > /dev/null 2>&1
         fi
-
+        
+        echo "Regenerating link-local addresses"
+        sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
+        sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
+        
     done
 
     if [[ "$enable_cake_sqm" == "true" ]]; then

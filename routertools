@@ -68,84 +68,89 @@ Help(){
 
     echo "Usage: x86routertools [arguments]"
     echo ""
-    echo "  edit {AP}		           edit the AP's config file. Use [AP]_hostapd for the hostapd file and empty for the main routertools file. "
-    echo ""
+    echo "  ROUTERTOOLS"
+    echo "  edit {AP/AP_hostapd}       opens editor on routertools config file."
     echo "  status-internet, inet      checks if internet access is present and exits"
     echo "  status-wifi, wifi {AP}     checks if the wifi AP(s) is/are up and running and exits"
     echo "  status-services, srv       checks if important services are running and exits"
     echo "  status, s                  shows a shortened version of all statuses"
-    echo ""
     echo "  ap-list, list-aps, la      shows a list of all AP names in routertools"
-    echo ""
     echo "  info-internet, iinet       shows information about the default route (internet)"
     echo "  info-wifi, iwifi {AP}      shows information about the wifi APs"
     echo "  info-services, isrv        shows all important services status verbosely"
     echo "  info-qdisc, iqdisc         shows all configured queue disciplines"
     echo "  info, i                    shows a shortened version of all information commands"
     echo ""
-    echo "* display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution, requires the MAC address"
-    echo "* display-airtime [AP] [MAC] displays airtime usage for a given device, requires MAC address, 100ms resolution"
+    echo "  INFORMATION"
+    echo "* display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution"
+    echo "* display-airtime [AP] [MAC] displays airtime usage for a given device, 100ms resolution"
     echo "* display-ani [AP]           displays runtime info about Adaptive Noise Immunity, 100ms resolution"
     echo "  display-local-network      displays all connected devices to this machine (ARP), 1s resolution"
-    echo "  display-qdisc [interface]  displays queue discipline statistics for the given interface, 100ms resolution"
+    echo "  display-qdisc [INTERFACE]  displays queue discipline statistics for the given interface, 100ms resolution"
+    echo "  display-interfaces         displays interface stats via netstat, 100ms resolution"
+    echo "  show-local-network, ls     shows all connected devices to this machine"
+    echo "  show-addresses [INTERFACE] shows addresses and routes assigned to interface"
+    echo "  show-ports                 shows listening ports (TCP/UDP) on this machine"
+    echo "  show-interfaces            shows all interfaces on this machine"
+    echo "  show-routes                shows all routes on this machine"
+    echo "  try-resolve [DOMAIN]       checks if domain name is resolvable"
+    echo "  try-reach [ADDRESS]        checks if domain/address is reachable via ping"
     echo ""
-    echo "  show-local-network, ls     show all connected devices to this machine, once"
-    echo ""
-    echo "  check-internet             checks and runs start-internet script if connection unavailable, checks if DNS is working and jumpstarts it"
+    echo "  CHECKS"
+    echo "  check-internet             checks and runs start-internet if connection unavailable, also checks DNS"
     echo "  check-wifi {AP}            checks and restarts the wifi AP(s) if not started"
     echo "  check, c                   checks both (all) wifi APs and internet, starts them automatically"
     echo ""
+    echo "  OPERATIONS"
     echo "  start-internet             runs the start-internet script"
     echo "  stop-internet              runs the stop-internet script"
     echo "  start-services             starts inactive important services"
-    echo "  start-wifi {AP}            (re)starts selected AP or all APs"
+    echo "  start-wifi {AP}            starts selected AP or all APs"
     echo "  stop-wifi {AP}             stops selected AP or all APs"
-    echo ""
     echo "  restart-services           restarts important services"
     echo "  restart-wifi {AP}          restarts the selected AP or all APs"
-    echo "  restart-internet"
-    echo ""
-    echo "  qdisc-on, qdisc            apply routertools's per-category queue disciplines"
-    echo "  qdisc-off                  return queue disciplines to the system defaults"
-    echo ""
+    echo "  restart-internet           restarts the internet connection via the user defined scripts"
     echo "  sysctl-install             installs optimized options to /etc/sysctl.d and reloads sysctl"
     echo ""
+    echo "  TOGGLEABLES "
+    echo "  qdisc-on, qdisc            apply routertools's per-category queue disciplines"
+    echo "  qdisc-off                  return queue disciplines to the system defaults"
     echo "* paprd-on {AP}              enables digital predistortion on all APs or on {AP} only"
     echo "* paprd-off {AP}             disables digital predistortion on all APs or on {AP} only"
-    echo ""
     echo "  dynack-on {AP}             enables ack timeout estimation on all APs or on {AP} only"
     echo "  dynack-off {AP}            disables ack timeout estimation on all APs or on {AP} only"
-    echo ""
     echo "* ani-on {AP}                enables adaptive noise immunity on all APs or on {AP} only"
     echo "* ani-off {AP}               disables adaptive noise immunity on all APs or on {AP} only"
-    echo ""
     echo "* lnamix-on {AP}             enables low noise amplifier signal mixing on all APs or on {AP} only"
     echo "* lnamix-off {AP}            disables low noise amplifier signal mixing on all APs or on {AP} only"
-    echo ""
     echo "* ath9k-recalibrate {AP}     recalibrates paprd & ani on atheros cards, best used in a cron job"
-    echo ""
     echo "  frame-opt-on {AP}          enables custom framesize optimization on all APs or on {AP} only"
     echo "  frame-opt-off {AP}         disables custom framesize optimization on all APs or on {AP} only"
-    echo ""
     echo "  powersave-on {AP}          enables power saving features on all APs or on {AP} only"
     echo "  powersave-off {AP}         disables power saving features on all APs or on {AP} only"
     echo ""
     echo "  reset-config, reset-cfg    resets x86routertools configuration files to default"
     echo ""
-    echo "  --daemon [AP]              starts the check/watchdog daemon for the selected AP. Please only use this in a (systemd) service"
+    echo "  SNIFFING"
+    echo "  sniff [INTERFACE]          starts tcpdump on that interface (all=any) and saves output to file sniff-interface."
+    echo "  sniff-verbose [INTERFACE]  same as above but tcpdump will dump a lot of data (verbose)"
+    echo "  display-queries            live display of DNS queries on network, needs a logging DNS resolver."
+    echo ""
+    echo "  ROUTERTOOLS DAEMON"
+    echo "  --daemon [AP]              starts the check/watchdog daemon for the selected AP."
     echo "  --daemon-stop [AP]         stops the check/watchdog daemon for the selected AP"
-    echo "  --daemon-inet              starts the check/watchdog daemon for the internet interface. Please only use this in a (systemd) service"
+    echo "  --daemon-inet              starts the check/watchdog daemon for the internet interface."
     echo "  --daemon-stop-inet         stops the check/watchdog daemon for the internet interface"
     echo "  --daemon-reload            reloads configuration for active daemons without restarting them"
     echo "  --list-daemons             lists active daemons and PIDs"
     echo ""
+    echo "  OPTIONS"
     echo "  -h, --help                 show this help and quit"
     echo "  -v, --version              show version info and quit"
     echo "  -q, --quiet                silence some routertools dialog to make output better to parse"
     echo "  -V, --verbose              operate verbosely"
-    echo "  -F, --nofail               keep going even if a critical error happens"
     echo "  -C, --noclear              never clear the screen"
-    echo "  -D, --detach               when combined with --daemon or --daemon-inet, runs these as detached processes. for use outside systemd"
+    echo "  -D, --detach               when combined with --daemon or --daemon-inet, runs these as detached processes."
     echo "  -Z, --disown               disown all jobs on exit"
     echo ""
     echo "Note: Arguments preceded by an asterisk might not work outside of ath9k devices"
@@ -190,6 +195,8 @@ error(){
         error_count=$(( $error_count + 1 ))
         echo "x86routertools error $error_suffix:" "$@" "In function: ${FUNCNAME[$((1 + $crit_add))]}"
         ifv echo "Call stack: ${FUNCNAME[*]}]"
+        else
+        error_count=$(( $error_count + 1 ))
     fi
     return $?
 
@@ -401,6 +408,12 @@ initfs(){
         echo "# you should also include your firewall service here." >> $f
         echo "important_services=dnsmasq" >> $f
         echo "" >> $f
+        echo "# query_log_file -> a path to a file to be watched by display-queries, your resolver log for example" >> $f
+        echo "query_log_file=" >> $f
+        echo "" >> $f
+        echo "# regenerate_link_local -> a boolean. regenerates IPv6 link local addresses when a new interface is brought up" >> $f
+        echo "regenerate_link_local=true" >> $f
+        echo "" >> $f
         echo "# notify_mode -> if properly set, check commands like check-inet will send a global notification if they notice" >> $f
         echo "# something is wrong. can be 'x11' for a desktop notification, 'tty' for terminal, and 'both' for both. Use 'none' if you don't want this." >> $f
         echo "notify_mode=none" >> $f
@@ -565,10 +578,6 @@ initfs(){
         echo "# gateways for more virtual interfaces can be set in gateway_x" >> $f
         echo "gateway=192.168.1.1" >> $f
         echo "gateway_x='192.168.2.1 192.168.3.1'" >> $f
-        echo "" >> $f
-        echo "# gateway_6 -> a gateway in ipv6 format. same quirks as gateway. example: ba1f:010a:89d4::1" >> $f
-        echo "gateway_6=" >> $f
-        echo "gateway_6x=" >> $f
         echo "" >> $f
 
         unset f
@@ -783,6 +792,74 @@ show_local_network(){
     arp -ev
 }
 
+show_routes(){
+netstat -rW
+netstat -r6W
+}
+
+show_interfaces(){
+netstat -i
+}
+
+show_ports(){
+netstat -tulpnW
+}
+
+show_addresses(){
+local i="$1"
+[[ "$i" == "" ]] && crit_error "No argument given."
+check_iface_present "$i" || crit_error "The interface $i does not exist!"
+echo "IPv4 addresses on $i:"
+ip addr $i | grep inet
+echo "IPv6 addresses on $i:"
+ip -6 addr $i | grep inet6
+}
+
+display_interfaces(){
+watch -n 0.1 netstat -iWn
+}
+
+display_queries(){
+checksu || crit_error "You must be root to do this!"
+if [[ -f "$query_log_file" ]]; then
+watch -n 0.1 tail --lines=$((LINES - 4)) "$query_log_file"
+else
+crit_error "No queries log file is configured."
+fi
+}
+
+sniff(){
+checksu || crit_error "You must be root to do this!"
+local i="$1"
+[[ "$i" == "" ]] && crit_error "No argument given."
+check_iface_present "$i" || crit_error "The interface $i does not exist!"
+if [[ $sniff_verbose -eq 1 ]]; then
+tcpdump --immediate-mode -vvv -XX -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
+else
+tcpdump --immediate-mode -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
+fi
+}
+
+try_reach(){
+local i="$1"
+[[ "$i" == "" ]] && quiet=0 crit_error "No argument given."
+get_inet_status "$i"
+status=$?
+
+[[ $status -eq 0 ]] && echo "$i is reachable by ICMP echo packets."
+[[ $status -eq 0 ]] || echo "$i is NOT reachable by ICMP echo packets."
+}
+
+try_resolve(){
+local i="$1"
+[[ "$i" == "" ]] && quiet=0 crit_error "No argument given."
+get_dns_status "$i"
+status=$?
+
+[[ $status -eq 0 ]] && echo "$i could be resolved."
+[[ $status -eq 0 ]] || echo "$i could NOT be resolved."
+}
+
 # Disable (or attempt to) CCK rates so we don't take up massive amounts of airtime
 # Probably doesn't work
 disable_cck_rates(){
@@ -797,8 +874,8 @@ disable_cck_rates(){
     for i in $wifi_ap_interfaces; do
         getphy $i
 
+        echo "Disabling CCK rates on $i"
         iw $i set bitrates legacy-2.4 6 9 12 18 24 36 48 54 2>/dev/null || iw $i set bitrates legacy-2.4 1 2 5.5 11 2>/dev/null
-        echo "Disabled cck rates on $i"
     done
 
 }
@@ -815,11 +892,10 @@ ani_on(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
         getphy $i
 
+        echo "Enabling adaptive noise immunity on $i"
         echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/ani 2>/dev/null || error "Failed to set parameter"
-        echo "Set ani -> 1 on $i"
     done
 
 }
@@ -836,11 +912,10 @@ ani_off(){
     fi
 
     for i in $wifi_ap_interfaces; do
-        #check_iface_exists $i
         getphy $i
 
+        echo "Disabling adaptive noise immunity on $i"
         echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/ani 2>/dev/null || error "Failed to set parameter"
-        echo "Set ani -> 0 on $i"
     done
 
 }
@@ -859,6 +934,7 @@ frame_opt_on(){
         load_prefs_iface $i
         getphy $i
 
+        echo "Enabling custom frame optimization on $i"
         iw phy$phy set frag 256
         ifconfig $i mtu 2304 || ifconfig $i mtu 1900
         iw phy$phy set retry short 12 || iw phy$phy set retry short 9
@@ -874,7 +950,6 @@ frame_opt_on(){
             iw phy$phy set distance auto
         fi
 
-        echo "Set frame_opt -> 1 on $i"
     done
 
 }
@@ -894,6 +969,7 @@ frame_opt_off(){
         load_prefs_iface $i
         getphy $i
 
+        echo "Disabling custom frame optimization on $i"
         iw phy$phy set frag off
         ifconfig $i mtu 1500
 
@@ -909,7 +985,6 @@ frame_opt_off(){
             iw phy$phy set distance auto
         fi
 
-        echo "Set frame_opt -> 0 on $i"
     done
 
 }
@@ -929,8 +1004,8 @@ paprd_on(){
         load_prefs_iface $i
         getphy $i
 
+        echo "Enabling digital predistortion on $i"
         echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/paprd 2>/dev/null || error "Failed to set parameter"
-        echo "Set paprd -> 1 on $i"
     done
 
 }
@@ -950,8 +1025,8 @@ paprd_off(){
         load_prefs_iface $i
         getphy $i
 
+        echo "Disabling digital predistortion on $i"
         echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/paprd 2>/dev/null || error "Failed to set parameter"
-        echo "Set paprd -> 0 on $i"
     done
 
 }
@@ -971,8 +1046,8 @@ lnamix_on(){
         load_prefs_iface $i
         getphy $i
 
+        echo "Enabling amplifier mixing on $i"
         echo 1 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/antenna_diversity 2>/dev/null || error "Failed to set parameter"
-        echo "Set lnamix -> 1 on $i"
     done
 
 }
@@ -992,8 +1067,8 @@ lnamix_off(){
         load_prefs_iface $i
         getphy $i
 
+        echo "Disabling amplifier mixing on $i"
         echo 0 > /sys/kernel/debug/ieee80211/phy$phy/ath9k/antenna_diversity 2>/dev/null || error "Failed to set parameter"
-        echo "Set lnamix -> 0 on $i"
     done
 
 }
@@ -1012,8 +1087,8 @@ dynack_on(){
     for i in $wifi_ap_interfaces; do
         load_prefs_iface $i
         getphy $i
+        echo "Enabling ack timeout estimation on $i"
         iw phy$phy set distance auto || error "Failed to set parameter"
-        echo "Set dynack -> 1 on $i"
     done
 
 }
@@ -1032,8 +1107,8 @@ dynack_off(){
     for i in $wifi_ap_interfaces; do
         load_prefs_iface $i
         getphy $i
+        echo "Disabling ack timout estimation on $i"
         iw phy$phy set distance 100 >/dev/null 2>&1 || error "Failed to set parameter"
-        echo "Set dynack -> 0 on $i"
     done
 
 }
@@ -1051,8 +1126,8 @@ powersave_on(){
 
     for i in $wifi_ap_interfaces; do
         load_prefs_iface $i
+        echo "Enabling powersave on $i"
         iw dev $i set power_save on >/dev/null 2>&1 || error "Failed to set parameter"
-        echo "Set powersave -> 1 on $i"
     done
 
 }
@@ -1070,8 +1145,8 @@ powersave_off(){
 
     for i in $wifi_ap_interfaces; do
         load_prefs_iface $i
+        echo "Disabling powersave on $i"
         iw dev $i set power_save off >/dev/null 2>&1 || error "Failed to set parameter"
-        echo "Set powersave -> 0 on $i"
     done
 
 }
@@ -1429,14 +1504,14 @@ ath9k_recalibrate(){
             ani_off $i
             sleep 3
             ani_on $i
-            echo "ani: done"
+            echo "Adaptive noise immunity recalibration: done"
         fi
 
         if [[ "$wifi_paprd" == "true" ]]; then
             paprd_off $i
             sleep 3
             paprd_on $i
-            echo "paprd: done"
+            echo "Digital predistortion recalibration: done"
         fi
 
         ledctl rmlock 3
@@ -1722,7 +1797,7 @@ check_services_exist(){
 
 }
 
-# Checks if the interface actually exists
+# Checks if the interface actually exists on the configuration
 check_iface_exists(){
 
     local i=$1
@@ -1735,6 +1810,35 @@ check_iface_exists(){
         crit_error "This interface does not have a hostapd configuration file."
     fi
 
+}
+
+# Checks if the interface actually exists on the configuration (returns 1 or 0)
+check_iface_exists_return(){
+
+    local i=$1
+
+    if [[ ! -f /etc/routertools.d/wifi-access-points/$i.conf ]]; then
+        return 1
+    fi
+
+    if [[ ! -f /etc/routertools.d/wifi-access-points/"$i"_hostapd.conf ]]; then
+        return 1
+    fi
+
+    return 0
+
+}
+
+# Checks if the interface is on the system at all
+check_iface_present(){
+
+    local i=$1
+
+    if [[ $(ifconfig -a | grep "flags=" | cut -d" " -f1 | grep -c "$i") -eq 1 ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Checks if the specified wifi AP is up
@@ -1824,36 +1928,31 @@ setup_ap_networking(){
         iptables -w -I FORWARD -i $i -s ${gateway%.*}.0/24 -j ACCEPT
         iptables -w -I FORWARD -i lo -d ${gateway%.*}.0/24 -j ACCEPT && echo "CONNECTED (v4): interface lo <-> interface $i"
         iptables -w -I FORWARD -i $inet_iface -d ${gateway%.*}.0/24 -j ACCEPT 2>/dev/null && echo "CONNECTED (v4): interface $inet_iface <-> interface $i"
+        echo "IPv4 addresses on $i:"
+        ip -4 addr show $i | grep inet
         echo 1 > /proc/sys/net/ipv4/conf/lo/forwarding
         echo 1 > /proc/sys/net/ipv4/ip_forward
 
         if [[ "$enable_ipv6" == "true" ]]; then
-            echo "Configuring static IPv6"
-
-            if [[ "$gateway_6" != "" ]]; then
-                # Configure iptables v6
-                echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
-                ip -6 addr add $gateway_6/64 broadcast ${gateway_6%:*}:ffff dev $i
-                ip6tables -w -t nat -I POSTROUTING -s ${gateway_6%:*}:ffff/64 ! -o $i -j MASQUERADE
-                ip6tables -w -I FORWARD -i $i -s ${gateway_6%:*}:ffff/64 -j ACCEPT
-                ip6tables -w -I FORWARD -i lo -d ${gateway_6%:*}:ffff/64 -j ACCEPT &&  echo "CONNECTED (v6): interface lo <-> interface $i"
-                ip6tables -w -I FORWARD -i $inet_iface -d ${gateway_6%:*}:ffff/64 -j ACCEPT 2>/dev/null && echo "CONNECTED (v6): interface $inet_iface <-> interface $i"
+            echo "Enabling IPv6 forwarding on $i"
+            echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
+            if [[ "$regenerate_link_local" == "true" ]]; then
+            echo "Regenerating IPv6 link-local addresses on all interfaces"
+            sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
+            sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
             else
-                echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
+            echo "Regenerating IPv6 link-local addresses on $i"
+            sysctl net.ipv6.conf.$i.addr_gen_mode=0 2>/dev/null
+            sysctl net.ipv6.conf.$i.addr_gen_mode=1 2>/dev/null
             fi
-
+            echo "IPv6 addresses on $i:"
+            ip -6 addr show $i | grep inet6
         fi
-
-        echo 1 > /proc/sys/net/ipv4/ip_forward
 
         if [[ $enable_pptp == "true" ]]; then
             echo "Enabling PPTP support"
             modprobe nf_nat_pptp > /dev/null 2>&1
         fi
-        
-        echo "Regenerating link-local addresses"
-        sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
-        sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
         
     done
 
@@ -1886,6 +1985,8 @@ get_service_status(){
 # DNS status check function
 get_dns_status(){
 
+    local domain="$1"
+
     # Check if the user actually put in a number in the config.
     if [[ "$inet_check_timeout" != "" ]] && [[ $inet_check_timeout -eq $inet_check_timeout ]]; then
         ifv echo "inet_check_timeout is ${inet_check_timeout}s"
@@ -1904,7 +2005,7 @@ get_dns_status(){
 
     rm /dev/shm/routertools.netrec.dns 2>/dev/null
 
-    stdbuf -oL ping -w $inet_check_ping_timeout $domain 2>&1 | stdbuf -oL grep -v PING > /dev/shm/routertools.netrec.dns &
+    stdbuf -oL ping -c 1 -w $inet_check_ping_timeout $domain 2>&1 | stdbuf -oL grep -v PING > /dev/shm/routertools.netrec.dns &
 
     local ping_pid=$!
     local elapsed=0
@@ -1980,7 +2081,7 @@ get_inet_status(){
     fi
 
     rm /dev/shm/routertools.netrec.inet 2>/dev/null
-    stdbuf -oL ping -w $inet_check_ping_timeout "$ip" 2>&1 | stdbuf -oL grep -v PING > /dev/shm/routertools.netrec.inet &
+    stdbuf -oL ping -c 1 -w $inet_check_ping_timeout "$ip" 2>&1 | stdbuf -oL grep -v PING > /dev/shm/routertools.netrec.inet &
     local ping_pid=$!
     local elapsed=0
 
@@ -2326,9 +2427,13 @@ start_internet(){
     checksu || crit_error "You must be root to do this!"
     echo "Running start-internet script at /etc/routertools.d/scripts/start-internet"
     source /etc/routertools.d/scripts/start-internet || error "An error occourred while executing /etc/routertools.d/scripts/start-internet"
-    return $?
-    echo "Done running script."
-
+    returnv=$?
+    if [[ "$regenerate_link_local" == "true" ]]; then
+            echo "Regenerating IPv6 link-local addresses on all interfaces"
+            sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
+            sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
+    fi
+    return $returnv
 }
 
 # Stop internet via user-made script
@@ -2388,7 +2493,7 @@ sysctl_install(){
     initfile /etc/sysctl.d/68-x86routertools.conf
     local f="/etc/sysctl.d/68-x86routertools.conf"
 
-    echo "################# New options ####################" >> "$f"
+    echo "################# Added by x86routertools ####################" >> "$f"
     echo "net.ipv4.tcp_ecn = 1" >> "$f"
     echo "net.ipv4.tcp_mtu_probing = 1" >> "$f"
     echo "net.core.default_qdisc = fq_codel" >> "$f"
@@ -2397,7 +2502,7 @@ sysctl_install(){
     echo "net.ipv4.tcp_slow_start_after_idle = 1" >> $f
     echo "net.ipv4.tcp_tw_reuse = 1" >> $f
     echo "net.ipv4.tcp_fastopen = 3" >> $f
-    echo "##################################################" >> "$f"
+    echo "##############################################################" >> "$f"
 
     sysctl -p --system
 
@@ -3088,6 +3193,36 @@ parse_cmdline(){
 
             display-qdisc|show-qdisc) display_qdisc "$2"
                 _exit ;;
+
+            display-queries) display_queries
+                _exit ;;
+
+            display-interfaces) display_interfaces
+                _exit ;;
+
+            show-addresses) show_addresses "$2"
+                shift ;;
+
+            show-interfaces) show_interfaces
+                shift ;;
+
+            show-ports) show_ports
+                shift ;;
+
+            show-routes) show_routes "$2"
+                shift ;;
+
+            sniff) sniff "$2"
+                _exit ;;
+
+            sniff-verbose) sniff_verbose=1 sniff "$2"
+                _exit ;;
+
+            try-resolve) quiet=1 try_resolve "$2"
+                exit $? ;;
+
+            try-reach) quiet=1 try_reach "$2"
+                exit $? ;;
 
             list-devices|ls|show-local-network) show_local_network
                 shift ;;

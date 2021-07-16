@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.4.0"
+version="1.5.0"
 error_count=0
 crit_count=0
 crit_add=0

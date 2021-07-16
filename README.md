@@ -150,3 +150,6 @@ Configuration is system-wide and is done via files in `/etc/routertools.d`
 
 #### <a name="scripts"></a>Scripts and examples
 [Take me to the wiki page](https://github.com/yagoplx/x86routertools/wiki/Scripts-and-Examples)
+
+#### Old project page
+https://gitlab.com/yagocl/x86routertools

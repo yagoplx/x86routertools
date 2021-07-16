@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.5.1"
+version="1.5.1a"
 error_count=0
 crit_count=0
 crit_add=0
@@ -1834,7 +1834,7 @@ check_iface_present(){
 
     local i=$1
 
-    if [[ $(ifconfig -a | grep "flags=" | cut -d" " -f1 | grep -c "$i") -eq 1 ]]; then
+    if [[ $(ifconfig -a | grep "flags=" | cut -d" " -f1 | grep -c "$i") -ne 0 ]]; then
         return 0
     else
         return 1

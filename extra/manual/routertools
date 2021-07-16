@@ -1,0 +1,293 @@
+.TH man 8 "16 Jul 2021" "1.5.1" "x86routertools"
+.SH NAME
+x86routertools \- router toolkit & daemon
+.SH SYNOPSIS
+routertools (--help) [ARGUMENTS]
+.SH DESCRIPTION
+x86routertools is a command line toolkit written in Bash that aims to turn a regular x86_64 computer running GNU/Linux into a wireless router or access point (AP).
+
+It does this whilst managing things like system services, alerts, system LEDs and making sure the network is always up via watchdog daemons.
+
+Similar in nature to create_ap, this goes a bit further with the configurability of the whole program and the scope. It can do:
+
+    Watch and restart wireless APs when needed, with per-AP configuration and simple masquerading/fowarding rules.
+
+    Watch and restart the internet-facing interface when needed via user-made scripts (x86routertools takes care of 'detecting' connectivity)
+
+    Network status logging and status alerts to desktop/console/LED
+
+    Automatically restart a service 'stack' on network initialization, for DNS sinkholing setups for example.
+
+    Manage queue disciplines with CAKE SQM and pre-defined categories
+
+    Manage ath9k Wi-Fi cards' special features, like digital predistortion and ack timeout estimation.
+
+    Manage generic Wi-Fi AP features, like power saving, retransmission, regulatory domains and transmit power.
+
+    Optimize the network stack, for example, toggling on BBRv2/v1 if present.
+
+    Offer command line tools for wireless AP management and debugging.
+
+.SH SCRIPTING
+x86routertools will look for scripts to run on interface stop/start on /etc/routertools.d/scripts/.
+
+They are:
+
+    start-internet ->
+
+    stop-internet ->
+
+    start-INTERFACE_NAME ->
+
+    stop-INTERFACE_NAME ->
+
+.SH USAGE
+x86routertools [arguments]
+
+  ROUTERTOOLS
+  edit {AP/AP_hostapd}       opens editor on routertools config file.
+  status-internet, inet      checks if internet access is present and exits
+  status-wifi, wifi {AP}     checks if the wifi AP(s) is/are up and running and exits
+  status-services, srv       checks if important services are running and exits
+  status, s                  shows a shortened version of all statuses
+  ap-list, list-aps, la      shows a list of all AP names in routertools
+  info-internet, iinet       shows information about the default route (internet)
+  info-wifi, iwifi {AP}      shows information about the wifi APs
+  info-services, isrv        shows all important services status verbosely
+  info-qdisc, iqdisc         shows all configured queue disciplines
+  info, i                    shows a shortened version of all information commands
+
+  INFORMATION
+* display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution
+* display-airtime [AP] [MAC] displays airtime usage for a given device, 100ms resolution
+* display-ani [AP]           displays runtime info about Adaptive Noise Immunity, 100ms resolution
+  display-local-network      displays all connected devices to this machine (ARP), 1s resolution
+  display-qdisc [INTERFACE]  displays queue discipline statistics for the given interface, 100ms resolution
+  display-interfaces         displays interface stats via netstat, 100ms resolution
+  show-local-network, ls     shows all connected devices to this machine
+  show-addresses [INTERFACE] shows addresses and routes assigned to interface
+  show-ports                 shows listening ports (TCP/UDP) on this machine
+  show-interfaces            shows all interfaces on this machine
+  show-routes                shows all routes on this machine
+  try-resolve [DOMAIN]       checks if domain name is resolvable
+  try-reach [ADDRESS]        checks if domain/address is reachable via ping
+
+  CHECKS
+  check-internet             checks and runs start-internet if connection unavailable, also checks DNS
+  check-wifi {AP}            checks and restarts the wifi AP(s) if not started
+  check, c                   checks both (all) wifi APs and internet, starts them automatically
+
+  OPERATIONS
+  start-internet             runs the start-internet script
+  stop-internet              runs the stop-internet script
+  start-services             starts inactive important services
+  start-wifi {AP}            starts selected AP or all APs
+  stop-wifi {AP}             stops selected AP or all APs
+  restart-services           restarts important services
+  restart-wifi {AP}          restarts the selected AP or all APs
+  restart-internet           restarts the internet connection via the user defined scripts
+  sysctl-install             installs optimized options to /etc/sysctl.d and reloads sysctl
+
+  TOGGLEABLES
+  qdisc-on, qdisc            apply routertools's per-category queue disciplines
+  qdisc-off                  return queue disciplines to the system defaults
+* paprd-on {AP}              enables digital predistortion on all APs or on {AP} only
+* paprd-off {AP}             disables digital predistortion on all APs or on {AP} only
+  dynack-on {AP}             enables ack timeout estimation on all APs or on {AP} only
+  dynack-off {AP}            disables ack timeout estimation on all APs or on {AP} only
+* ani-on {AP}                enables adaptive noise immunity on all APs or on {AP} only
+* ani-off {AP}               disables adaptive noise immunity on all APs or on {AP} only
+* lnamix-on {AP}             enables low noise amplifier signal mixing on all APs or on {AP} only
+* lnamix-off {AP}            disables low noise amplifier signal mixing on all APs or on {AP} only
+* ath9k-recalibrate {AP}     recalibrates paprd & ani on atheros cards, best used in a cron job
+  frame-opt-on {AP}          enables custom framesize optimization on all APs or on {AP} only
+  frame-opt-off {AP}         disables custom framesize optimization on all APs or on {AP} only
+  powersave-on {AP}          enables power saving features on all APs or on {AP} only
+  powersave-off {AP}         disables power saving features on all APs or on {AP} only
+
+  reset-config, reset-cfg    resets x86routertools configuration files to default
+
+  SNIFFING
+  sniff [INTERFACE]          starts tcpdump on that interface (all=any) and saves output to file sniff-interface.
+  sniff-verbose [INTERFACE]  same as above but tcpdump will dump a lot of data (verbose)
+  display-queries            live display of DNS queries on network, needs a logging DNS resolver.
+
+  ROUTERTOOLS DAEMON
+  --daemon [AP]              starts the check/watchdog daemon for the selected AP.
+  --daemon-stop [AP]         stops the check/watchdog daemon for the selected AP
+  --daemon-inet              starts the check/watchdog daemon for the internet interface.
+  --daemon-stop-inet         stops the check/watchdog daemon for the internet interface
+  --daemon-reload            reloads configuration for active daemons without restarting them
+  --list-daemons             lists active daemons and PIDs
+
+  OPTIONS
+  -h, --help                 show this help and quit
+  -v, --version              show version info and quit
+  -q, --quiet                silence some routertools dialog to make output better to parse
+  -V, --verbose              operate verbosely
+  -C, --noclear              never clear the screen
+  -D, --detach               when combined with --daemon or --daemon-inet, runs these as detached processes.
+  -Z, --disown               disown all jobs on exit
+
+Note: Arguments preceded by an asterisk might not work outside of ath9k devices
+Note: [] indicates a necessary argument. {} indicates an optional one.
+.SH CONFIGURATION (x86routertools.conf)
+ use_logger -> a boolean.
+ if true, the script will try to use logger to send messages to the system log.
+ if you are running routertools in the crontab or via a systemd service, you don't need this.
+
+ status_led -> a string. point this to an entry in /sys/class/leds/ to have routertools control that led
+ for indicating status changes. leave empty to turn it off.
+
+ inet_iface -> the interface that will be checked by
+ internet commands, and started by internet scripts. example: enp2s0
+
+ dns_check_addresses -> an array.
+ can contain up to 4 names to try & resolve on internet tests. example: google.com
+ if unset, will use defaults.
+
+ ip_check_addresses -> an array.
+ can contain up to 2 IPs to ping on internet tests. example: 8.8.8.8
+ if unset, will use defaults.
+
+ important_services -> a list of systemd services important to this router.
+ they will be started by the connectivity commands. example: dnsmasq haveged
+ you should also include your firewall service here.
+
+ query_log_file -> a path to a file to be watched by display-queries, your resolver log for example
+
+ regenerate_link_local -> a boolean. regenerates IPv6 link local addresses when a new interface is brought up
+
+ notify_mode -> if properly set, check commands like check-inet will send a global notification if they notice
+ something is wrong. can be 'x11' for a desktop notification, 'tty' for terminal, and 'both' for both. Use 'none' if you don't want this.
+
+ inet_check_timeout -> a number in seconds. this is for how long it'll wait for an external address to respond
+ or for dns names to be resolved.
+
+ silence_check_services -> a boolean. if true, you won't get a warning about things not being installed.
+
+ enable_rngd -> a boolean. if true, rng-tools' rngd will be started along with the wifi AP and haveged.
+ it makes additional randomness for the OS. however, it may cause high CPU usage on computers without hardware RNG generators.
+
+ enable_cake_sqm -> a boolean. if true, CAKE queue discipline will be applied to interfaces
+ in a way similar to sqm_scripts. This helps with bufferbloat.
+
+ enable_cake_ack_filter -> a boolean. if true, CAKE ack filtering will be enabled on suitable interfaces.
+
+ sqm_ack_filter_aggressive -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter
+ will be set to aggressive mode on all interfaces.
+
+ ack_filter_no_ppp -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter
+ will not be enabled on ppp interfaces.
+
+ restart_services_for_wifi -> a boolean. if true, important_services will be automatically restarted alongside wifi interfaces.
+
+ sqm_inet_upload -> a number. set this to your internet's upload speed in megabit per second.
+ if this is not set, i will just not do upload traffic shaping.
+
+ sqm_inet_download -> a number. set this to your internet's download speed in megabit per second.
+ if this is not set, i will just not do download traffic shaping.
+
+ sqm_wash_markings -> a boolean. if true, washes out traffic type markings inbound.
+
+ sqm_use_overheads -> a boolean. if true, sqm will use some predefined overhead keywords for packet size compensation.
+
+ sqm_wifi_wash -> a boolean. if true, washes diffserv markings on wifi interfaces.
+ this will automatically set besteffort on the wifi interfaces.
+
+ sqm_diffserv -> a number. select number of diffserv tins cake will use, can be 0, 3, 4 or 8
+ 0 is besteffort and may complement sqm_wash_markings. if unset, 4 will be used.
+
+ sqm_enable_ifb_on_ethernet -> a boolean. if true, full cake traffic shaping
+ will also be attempted on ethernet interfaces, not just ppp.
+ enable this if you get internet on this machine via NAT/DHCP from another router.
+
+ enable_bbr -> a boolean. if true, enables Google's BBR tcp congestion algorithm for
+ enhanced network performance, when applying SQM. Will enable BBRv2 instead of v1 if available.
+
+ enable_rpfilter -> a boolean. if true, enables reverse path filtering on all interfaces, when applying qdisc options.
+ this will block common address forging attacks on your network.
+ it does not replace a firewall!
+
+.SH CONFIGURATION (interface.conf)
+ hostapd_wait_for_secs -> seconds to wait for hostapd to ready interfaces
+ 15 seconds is a reasonable number. increase this if you use ACS or a lot of virtual interfaces.
+
+ wifi_txpower -> transmission power for this interface
+ can be 'auto' or a number in dBm for fixed power. Auto is usually best.
+
+ wifi_powersave -> a boolean (true/false). if true, powersaving features will be enabled as soon as the AP is turned on.
+
+ wifi_regdomain -> if set to a two-letter country code like GY, will set this as the system's regulatory domain
+
+ wifi_drivers -> a list of kernel modules to remove and insert upon starting this AP.
+ this is not the same as hostapd's driver configuration. lspci -v may give you the name of the kernel module the interface is using.
+ leave commented if you don't know.
+
+ wifi_reload_drivers -> a boolean (true/false). if true, the drivers will be reloaded on AP start.
+ depends on wifi_drivers, and fixes some issues with some drivers such as rtl8192eX
+
+ wifi_darkstat_port -> a port. if set, darkstat will be initialized on this interface and port
+ so that you may snoop on its traffic statistics via a web browser. Requires darkstat to be installed
+
+ wifi_virtual_interfaces -> a list of additional interfaces you spawned with hostapd bssids.
+ the script needs to know about them to properly initialize them.
+ if you are only using one AP on this network card you need not set this.
+
+ wifi_dynack -> a boolean. true enables dynamic ack timeout estimation algorithm, only works on ath9k cards
+
+ wifi_paprd -> a boolean. true enables digital predistortion, only works on Atheros cards.
+
+ wifi_retry_short -> a number. sets the limit of times the AP will retry sending a packet before dropping it.
+ default is 4
+
+ wifi_retry_long -> a number. sets the limit of times the AP will retry sending a packet before dropping it in RTS/CTS mode.
+ default is 3
+
+ wifi_frame_optimization -> a boolean. enables custom frame size optimization.
+ overrides retries, fragmentation, and MTU related options.
+
+ wifi_lnamix -> a boolean. true enables low noise amplifier mixing, only works on Atheros cards.
+
+ wifi_ani -> a boolean. false disables adaptive noise immunity, only works on Atheros cards.
+
+ wifi_coverage -> a number. sets coverage class in microsec of air propagation time. default is unset.
+
+ wifi_distance -> a number. sets maximum ack timeout by distance in meters. default is unset. setting this disables dynack.
+
+ wifi_disable_cck -> a boolean. true disables legacy b/g rates. default is unset.
+
+ NETWORKING OPTIONS
+
+ require_internet -> a boolean. true makes it so this wireless interface will only be set up via check commands if an internet connection is available.
+
+ enable_ipv6 -> a boolean. true only enables ipv6 forwarding on this interface.
+ if you actually want it to work you need radvd or a configured dnsmasq.
+ unless something else in your network does this for you.
+
+ enable_pptp -> a boolean. true inserts the module needed for PPTP. if you are not sure you need it say false here, as the Point to Point Tunneling Protocol is known to be insecure.
+
+ gateway -> a gateway in ipv4 format. example: 192.168.1.1
+ usually this is the internet router's private ip address.
+ since this computer is probably also the internet providing router,
+ you may want to set it to this computer's ip address as set in /etc/hosts
+ this will also be used as the interface's ipv4 address.
+ gateways for more virtual interfaces can be set in gateway_x
+
+.SH CONFIGURATION (daemon.conf)
+ daemon_manage_inet_every -> a number in seconds. the internet watchdog will be executed every this amount of time.
+
+ daemon_manage_wifi_every -> a number in seconds. the wifi watchdog will be executed every this amount of time.
+
+ daemon_wifi_wait_for_internet_timeout -> a number in seconds.
+ if running in daemon mode and require_internet is enabled, after this  long and internet is still not available wifi will be started anyway.
+ set to 0 if you really want to disable this
+
+ daemon_ath9k_recalibrate_every -> a number in seconds.
+ if running the wifi daemon and wifi_driver for that interface includes ath9k, ath9k-recalibrate will be run every X seconds.
+ recommended is hourly (3600). Set to 0 to disable.
+
+.SH BUGS
+x86routertools is incompatible with NetworkManager.
+.SH AUTHOR
+Yago Mont' Alverne (yagocl@protonmail.ch)

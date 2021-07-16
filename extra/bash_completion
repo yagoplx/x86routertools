@@ -1,0 +1,21 @@
+#/usr/bin/env bash
+
+_routertools_completions(){
+    local cur prev opts
+    
+    COMPREPLY=()
+    
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="--help --version --verbose --quiet --daemon --daemon-list --daemon-stop-inet --daemon-stop --daemon-reload --daemon-inet --no-clear --disown --detach"
+    args="info status check list-aps status-inet status-wifi status-services start-inet start-services start-wifi stop-inet stop-wifi restart-services restart-wifi restart-inet info-inet info-wifi info-qdisc check-inet check-wifi qdisc-on qdisc-off sqm-enable sqm-disable paprd-on paprd-off ani-on ani-off dynack-on dynack-off lnamix-on lnamix-off frame-opt-on frame-opt-off ath9k-recalibrate sysctl-install reset-cfg reset-config powersave-on powersave-off display-ani display-rates display-airtime display-devices ls la display-local-network show-devices display-qdisc show-qdisc display-queries display-interfaces show-addresses show-interfaces show-ports show-routes sniff sniff-verbose try-resolve try-reach show-local-network list-devices test-notify edit"
+
+    if [[ ${cur} == -* ]] ; then
+        COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+        return 0
+    else
+    	 COMPREPLY=($(compgen -W "${args}" -- ${cur}))
+    fi
+}
+
+complete -F _routertools_completions routertools

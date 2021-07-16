@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 #    x86routertools
 #    Copyright (C) 2021 Yago Mont' Alverne (yagocl@protonmail.ch)
@@ -249,7 +249,7 @@ initfile(){
     # Initializes config files as sourceable bash scripts
     for i_file in $@; do
         ifv echo "Initialized file $i_file"
-        echo "#!/bin/bash" > $i_file
+        echo "#!/usr/bin/env bash" > $i_file
     done
 
     unset i_file

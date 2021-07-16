@@ -84,13 +84,14 @@ To install it on your system:
 * Run make install:
 * `# make install`
 
-It should be ready for configuration, though you may also want to run a `systemctl daemon-reload` if you want to try out the daemon right away.
+You may also want to run a `systemctl daemon-reload` if you want to try out the daemon right away.
 
 Configuration is well documented and required, check the new files at `/etc/routertools.d` for examples and info. For example, to register a new wireless interface with x86routertools, you will want to set up them at `/etc/routertools.d/wifi-access-points`.
 
 Each wireless interface should have two files in there: a interfacename.conf, and a interfacename_hostapd.conf. Example files with all possible options documented are provided for you to copy/rename.
 
-As for the internet facing interface, you should set up scripts to set them up and down at `/etc/routertools.d/scripts`. The default is to just call the Arch Linux pppoe-start and pppoe-stop commands for PPPoE. The daemon will call the stop script when it restarts the interface, and then the start script. The command line tools also can use these scripts as well.
+As for the internet facing interface, you should set up scripts to set them up and down at `/etc/routertools.d/scripts`. The default is to just call the Arch Linux pppoe-start and pppoe-stop commands for PPPoE, in this case the internet interface is ppp0. The daemon will call the stop script when it restarts the interface, and then the start script. The command line tools also can use these scripts as well. If necessary, you should include configuration for other interfaces on the start script, for example, making a 6to4 tunnel or a bridge interface, setting addresses/routes for them via ip/iptables, etc.  
+In the scripts folder you can also add start-interfacename/stop-interfacename files for your access point interfaces. This is useful for additional routing/address work if the included functionality in x86routertools isn't enough (eg. IPv6).
 
 You can have the daemon start on boot for the standard wifi router experience:
 * `# systemctl enable routertoolsd-inet`

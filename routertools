@@ -195,7 +195,7 @@ error(){
         error_count=$(( $error_count + 1 ))
         echo "x86routertools error $error_suffix:" "$@" "In function: ${FUNCNAME[$((1 + $crit_add))]}"
         ifv echo "Call stack: ${FUNCNAME[*]}]"
-        else
+    else
         error_count=$(( $error_count + 1 ))
     fi
     return $?
@@ -793,71 +793,71 @@ show_local_network(){
 }
 
 show_routes(){
-netstat -rW
-netstat -r6W
+    netstat -rW
+    netstat -r6W
 }
 
 show_interfaces(){
-netstat -i
+    netstat -i
 }
 
 show_ports(){
-netstat -tulpnW
+    netstat -tulpnW
 }
 
 show_addresses(){
-local i="$1"
-[[ "$i" == "" ]] && crit_error "No argument given."
-check_iface_present "$i" || crit_error "The interface $i does not exist!"
-echo "IPv4 addresses on $i:"
-ip addr $i | grep inet
-echo "IPv6 addresses on $i:"
-ip -6 addr $i | grep inet6
+    local i="$1"
+    [[ "$i" == "" ]] && crit_error "No argument given."
+    check_iface_present "$i" || crit_error "The interface $i does not exist!"
+    echo "IPv4 addresses on $i:"
+    ip addr $i | grep inet
+    echo "IPv6 addresses on $i:"
+    ip -6 addr $i | grep inet6
 }
 
 display_interfaces(){
-watch -n 0.1 netstat -iWn
+    watch -n 0.1 netstat -iWn
 }
 
 display_queries(){
-checksu || crit_error "You must be root to do this!"
-if [[ -f "$query_log_file" ]]; then
-watch -n 0.1 tail --lines=$((LINES - 4)) "$query_log_file"
-else
-crit_error "No queries log file is configured."
-fi
+    checksu || crit_error "You must be root to do this!"
+    if [[ -f "$query_log_file" ]]; then
+        watch -n 0.1 tail --lines=$((LINES - 4)) "$query_log_file"
+    else
+        crit_error "No queries log file is configured."
+    fi
 }
 
 sniff(){
-checksu || crit_error "You must be root to do this!"
-local i="$1"
-[[ "$i" == "" ]] && crit_error "No argument given."
-check_iface_present "$i" || crit_error "The interface $i does not exist!"
-if [[ $sniff_verbose -eq 1 ]]; then
-tcpdump --immediate-mode -vvv -XX -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
-else
-tcpdump --immediate-mode -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
-fi
+    checksu || crit_error "You must be root to do this!"
+    local i="$1"
+    [[ "$i" == "" ]] && crit_error "No argument given."
+    check_iface_present "$i" || crit_error "The interface $i does not exist!"
+    if [[ $sniff_verbose -eq 1 ]]; then
+        tcpdump --immediate-mode -vvv -XX -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
+    else
+        tcpdump --immediate-mode -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
+    fi
 }
 
 try_reach(){
-local i="$1"
-[[ "$i" == "" ]] && quiet=0 crit_error "No argument given."
-get_inet_status "$i"
-status=$?
+    local i="$1"
+    [[ "$i" == "" ]] && quiet=0 crit_error "No argument given."
+    get_inet_status "$i"
+    status=$?
 
-[[ $status -eq 0 ]] && echo "$i is reachable by ICMP echo packets."
-[[ $status -eq 0 ]] || echo "$i is NOT reachable by ICMP echo packets."
+    [[ $status -eq 0 ]] && echo "$i is reachable by ICMP echo packets."
+    [[ $status -eq 0 ]] || echo "$i is NOT reachable by ICMP echo packets."
 }
 
 try_resolve(){
-local i="$1"
-[[ "$i" == "" ]] && quiet=0 crit_error "No argument given."
-get_dns_status "$i"
-status=$?
+    local i="$1"
+    [[ "$i" == "" ]] && quiet=0 crit_error "No argument given."
+    get_dns_status "$i"
+    status=$?
 
-[[ $status -eq 0 ]] && echo "$i could be resolved."
-[[ $status -eq 0 ]] || echo "$i could NOT be resolved."
+    [[ $status -eq 0 ]] && echo "$i could be resolved."
+    [[ $status -eq 0 ]] || echo "$i could NOT be resolved."
 }
 
 # Disable (or attempt to) CCK rates so we don't take up massive amounts of airtime
@@ -1937,13 +1937,13 @@ setup_ap_networking(){
             echo "Enabling IPv6 forwarding on $i"
             echo 1 > /proc/sys/net/ipv6/conf/$i/forwarding
             if [[ "$regenerate_link_local" == "true" ]]; then
-            echo "Regenerating IPv6 link-local addresses on all interfaces"
-            sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
-            sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
+                echo "Regenerating IPv6 link-local addresses on all interfaces"
+                sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
+                sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
             else
-            echo "Regenerating IPv6 link-local addresses on $i"
-            sysctl net.ipv6.conf.$i.addr_gen_mode=0 2>/dev/null
-            sysctl net.ipv6.conf.$i.addr_gen_mode=1 2>/dev/null
+                echo "Regenerating IPv6 link-local addresses on $i"
+                sysctl net.ipv6.conf.$i.addr_gen_mode=0 2>/dev/null
+                sysctl net.ipv6.conf.$i.addr_gen_mode=1 2>/dev/null
             fi
             echo "IPv6 addresses on $i:"
             ip -6 addr show $i | grep inet6
@@ -1953,15 +1953,15 @@ setup_ap_networking(){
             echo "Enabling PPTP support"
             modprobe nf_nat_pptp > /dev/null 2>&1
         fi
-<<<<<<< HEAD
-        
-=======
+        <<<<<<< HEAD
+
+        =======
 
         echo "Regenerating link-local addresses"
         sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
         sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
 
->>>>>>> 7b2a6fb68818cf6e78a0fb96e47b5ddddff37b85
+        >>>>>>> 7b2a6fb68818cf6e78a0fb96e47b5ddddff37b85
     done
 
     if [[ "$enable_cake_sqm" == "true" ]]; then
@@ -2437,9 +2437,9 @@ start_internet(){
     source /etc/routertools.d/scripts/start-internet || error "An error occourred while executing /etc/routertools.d/scripts/start-internet"
     returnv=$?
     if [[ "$regenerate_link_local" == "true" ]]; then
-            echo "Regenerating IPv6 link-local addresses on all interfaces"
-            sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
-            sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
+        echo "Regenerating IPv6 link-local addresses on all interfaces"
+        sysctl net.ipv6.conf.all.addr_gen_mode=0 2>/dev/null
+        sysctl net.ipv6.conf.all.addr_gen_mode=1 2>/dev/null
     fi
     return $returnv
 }

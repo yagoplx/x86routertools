@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.6.0"
+version="2.0.0"
 error_count=0
 crit_count=0
 crit_add=0
@@ -432,10 +432,6 @@ initfs(){
         echo "# will be set to aggressive mode on all interfaces." >> $f
         echo "sqm_ack_filter_aggressive=false" >> $f
         echo "" >> $f
-        echo "# ack_filter_no_ppp -> a boolean. if true, and enable_cake_ack_filter is also true, the ack filter" >> $f
-        echo "# will not be enabled on ppp interfaces." >> $f
-        echo "ack_filter_no_ppp=false" >> $f
-        echo "" >> $f
         echo "# restart_services_for_wifi -> a boolean. if true, important_services will be automatically restarted alongside wifi interfaces." >> $f
         echo "restart_services_for_wifi=false" >> $f
         echo "" >> $f
@@ -452,10 +448,6 @@ initfs(){
         echo "" >> $f
         echo "# sqm_use_overheads -> a boolean. if true, sqm will use some predefined overhead keywords for packet size compensation." >> $f
         echo "sqm_use_overheads=true" >> $f
-        echo "" >> $f
-        echo "# sqm_wifi_wash -> a boolean. if true, washes diffserv markings on wifi interfaces." >> $f
-        echo "# this will automatically set besteffort on the wifi interfaces." >> $f
-        echo "sqm_wifi_wash=false" >> $f
         echo "" >> $f
         echo "# sqm_diffserv -> a number. select number of diffserv tins cake will use, can be 0, 3, 4 or 8" >> $f
         echo "# 0 is besteffort and may complement sqm_wash_markings. if unset, 4 will be used." >> $f
@@ -546,8 +538,6 @@ initfs(){
         echo "# wifi_distance -> a number. sets maximum ack timeout by distance in meters. default is unset. setting this disables dynack." >> $f
         echo "wifi_distance=" >> $f
         echo "" >> $f
-        echo "# wifi_disable_cck -> a boolean. true disables legacy b/g rates. default is unset." >> $f
-        echo "wifi_disable_cck=" >> $f
         echo "" >> $f
         echo "# NETWORKING OPTIONS #" >> $f
         echo "" >> $f
@@ -1146,7 +1136,6 @@ sqm_disable(){
 
     # Print qdiscs in use.
     ifv tc qdisc
-
 }
 
 chk_qdisc(){
@@ -1398,9 +1387,9 @@ sqm_enable(){
             ifnq echo "Applying queue discipline to $i (wireless interface)"
             tc qdisc del dev $i root 2>/dev/null
             if [[ "$sqm_wifi_wash" == "true" ]]; then
-                tc qdisc add dev $i root cake wash besteffort ${overhead}split-gso rtt 50ms
+                tc qdisc add dev $i root cake wash besteffort ${overhead}split-gso nat rtt 50ms $extra_arg
             else
-                tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 50ms
+                tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso nat rtt 50ms $extra_arg
             fi
         fi
 
@@ -1419,7 +1408,7 @@ sqm_enable(){
 
             ifnq echo "Applying queue discipline to $i (virtual interface)"
             tc qdisc del dev $i root 2>/dev/null
-            tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 10ms $extra_arg
+            tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso nat rtt 10ms $extra_arg
 
         fi
 
@@ -1437,7 +1426,7 @@ sqm_enable(){
 
             ifnq echo "Applying queue discipline to $i (tunnel interface)"
             tc qdisc del dev $i root 2>/dev/null
-            tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 300ms $extra_arg
+            tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso nat rtt 300ms $extra_arg
 
         fi
 
@@ -1448,7 +1437,7 @@ sqm_enable(){
         if ! chk_qdisc $i; then
             ifnq echo "Applying queue discipline to $i (generic interface)"
             tc qdisc del dev $i root
-            tc qdisc add dev $i root cake
+            tc qdisc add dev $i root cake nat split-gso
         fi
 
     done
@@ -2908,7 +2897,7 @@ _exit(){
 
         if [[ $disown_all_jobs -eq 1 ]]; then
             disown_all
-            echo "Finished running with $error_count errors, $crit_count critical."
+            echo "Exiting with $error_count errors ($crit_count critical)"
             exit $returnvalue
         fi
 
@@ -2916,7 +2905,7 @@ _exit(){
         wait
     fi
 
-    echo "Finished running with $error_count errors, $crit_count critical."
+    echo "Exiting with $error_count errors ($crit_count critical)"
     exit $returnvalue
 
 }
@@ -3231,7 +3220,5 @@ parse_cmdline ${final_args}
 
 # Handle return value and errors
 if [[ $count_arg -ne 0 ]]; then
-    ifv _exit
-else
-    exit $?
+    _exit
 fi

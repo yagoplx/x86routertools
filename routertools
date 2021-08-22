@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="1.5.1a"
+version="1.6.0"
 error_count=0
 crit_count=0
 crit_add=0
@@ -130,11 +130,6 @@ Help(){
     echo "  powersave-off {AP}         disables power saving features on all APs or on {AP} only"
     echo ""
     echo "  reset-config, reset-cfg    resets x86routertools configuration files to default"
-    echo ""
-    echo "  SNIFFING"
-    echo "  sniff [INTERFACE]          starts tcpdump on that interface (all=any) and saves output to file sniff-interface."
-    echo "  sniff-verbose [INTERFACE]  same as above but tcpdump will dump a lot of data (verbose)"
-    echo "  display-queries            live display of DNS queries on network, needs a logging DNS resolver."
     echo ""
     echo "  ROUTERTOOLS DAEMON"
     echo "  --daemon [AP]              starts the check/watchdog daemon for the selected AP."
@@ -342,17 +337,14 @@ initfs(){
         initfile ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
 
         ifv echo "Setting permissions on ${PREFIX}routertools.d"
-        chmod 700 ${PREFIX}routertools.d/*
-        chmod og+xr ${PREFIX}routertools.d
-        chmod og+xr ${PREFIX}routertools.d/x86routertools.conf
-        chmod og+xr ${PREFIX}routertools.d/wifi-access-points/example_interface.conf
-        chmod og+xr ${PREFIX}routertools.d/wifi-access-points
+        chmod ugo+x ${PREFIX}routertools.d
+        chmod go-x ${PREFIX}routertools.d/scripts
+        chmod go-x ${PREFIX}routertools.d/wifi-access-points
+        chmod go+r ${PREFIX}routertools.d/x86routertools.conf
+
 
         echo "Downloading example hostapd.conf from w1.fi. Please wait..."
         wget -q https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
-
-        # Hostapd file may contain plaintext passwords
-        chmod -R 700 ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf
 
         # Populate files
         initfile ${PREFIX}routertools.d/scripts/start-internet
@@ -828,18 +820,6 @@ display_queries(){
     fi
 }
 
-sniff(){
-    checksu || crit_error "You must be root to do this!"
-    local i="$1"
-    [[ "$i" == "" ]] && crit_error "No argument given."
-    check_iface_present "$i" || crit_error "The interface $i does not exist!"
-    if [[ $sniff_verbose -eq 1 ]]; then
-        tcpdump --immediate-mode -vvv -XX -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
-    else
-        tcpdump --immediate-mode -i $i | tee sniff-$i-$(date "+%H-%M-%S-%N")
-    fi
-}
-
 try_reach(){
     local i="$1"
     [[ "$i" == "" ]] && quiet=0 crit_error "No argument given."
@@ -937,13 +917,12 @@ frame_opt_on(){
         echo "Enabling custom frame optimization on $i"
         iw phy$phy set frag 256
         ifconfig $i mtu 2304 || ifconfig $i mtu 1900
-        iw phy$phy set retry short 12 || iw phy$phy set retry short 9
         iw phy$phy set rts off
 
         if [[ "$wifi_distance" != "" ]]; then
             iw phy$phy set distance "$wifi_distance"
         else
-            iw phy$phy set distance 10
+            iw phy$phy set distance 1
         fi
 
         if [[ "$wifi_dynack" == "true" ]]; then
@@ -1170,24 +1149,37 @@ sqm_disable(){
 
 }
 
+chk_qdisc(){
+
+	[[ $(tc qdisc show dev "$1" root | grep -ic "cake") -gt 0 ]] && return 0
+	return 1
+
+}
+
 # Enable custom SQM for bufferbloat
 sqm_enable(){
 
     checksu || crit_error "You must be root to use SQM."
 
     # Group interfaces into categories
-    local ifaces=$(ifconfig | grep -i 'flags=' | grep -v 'lo' | grep -v 'loopback' |  sed 's/:.*//')
-    local ethernet_ifaces=$(echo "$ifaces" | grep -E 'enp|ens|eth')
-    local wifi_ifaces=$(echo "$ifaces" | grep -E 'wlp|wifi|wlan')
-    local vir_ifaces=$(echo "$ifaces" | grep -E 'vnet|team|vlan|br|virt')
-    local tun_ifaces=$(echo "$ifaces" | grep -E 'wg|tun')
-    local ppp_ifaces=$(echo "$ifaces" | grep -E 'ppp' | grep -v 'ifb')
-    local ifb_ifaces=$(echo "$ifaces" | grep -E 'ppp' | grep -i 'ifb')
+    local new_ifaces=$(ifconfig | grep -i 'flags=' | grep -v 'lo' | grep -v 'loopback' |  sed 's/:.*//')
+	local ifaces=""
+	NEWLINE=$'\n'
+
+	for i in $new_ifaces; do
+		chk_qdisc $i || ifaces="${ifaces}$NEWLINE${i}"
+	done
+	
+    local ethernet_ifaces=$(echo -e "$ifaces" | grep -E 'enp|ens|eth')
+    local wifi_ifaces=$(echo -e "$ifaces" | grep -E 'wlp|wifi|wlan')
+    local vir_ifaces=$(echo -e "$ifaces" | grep -E 'vnet|team|vlan|br|virt')
+    local tun_ifaces=$(echo -e "$ifaces" | grep -E 'wg|tun')
+    local ppp_ifaces=$(echo -e "$ifaces" | grep -E 'ppp' | grep -v 'ifb')
+    local ifb_ifaces=$(echo -e "$ifaces" | grep -E 'ppp' | grep -i 'ifb')
     local cake_chk=$(lsmod | grep -i act_mirred)
 
     # Insert modules for CAKE if not yet inserted
     if [[ "$cake_chk" = "" ]]; then
-        echo "Inserting qdisc modules"
         modprobe sch_cake
         modprobe act_mirred
     fi
@@ -1213,7 +1205,7 @@ sqm_enable(){
         diffserv="diffserv4 "
 
     fi
-
+	
     # Apply qdisc in categories
     for i in $ppp_ifaces; do
 
@@ -1248,10 +1240,10 @@ sqm_enable(){
 
             if [[ "$sqm_inet_download" != "" ]]; then
                 tc qdisc add dev ifb$i root cake ${diffserv}nat bandwidth "$sqm_inet_download"mbit ${overhead}split-gso $extra_arg
-                echo "Applying queue discipline to $i (ifb interface)"
+                ifnq echo "Applying queue discipline to $i (ifb interface)"
             else
                 tc qdisc add dev ifb$i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
-                echo "Applying queue discipline to $i (ifb interface)"
+                ifnq echo "Applying queue discipline to $i (ifb interface)"
             fi
 
             ip link set ifb$i up
@@ -1262,8 +1254,8 @@ sqm_enable(){
         extra_arg=${restore_extra_arg}
     done
 
-    pppe_ifaces=$(tc qdisc | grep -E 'ppp' | grep -v 'ifb' | grep -v 'cake' | grep -v 'ingress')
-    ifbe_ifaces=$(tc qdisc | grep -E 'ppp' | grep -i 'ifb' | grep -v 'cake')
+    pppe_ifaces=$(tc qdisc | grep -E 'ppp' | grep -v 'ifb' | grep -v 'cake' | grep -v 'ingress' | awk '{printf $5}' )
+    ifbe_ifaces=$(tc qdisc | grep -E 'ppp' | grep -i 'ifb' | grep -v 'cake' | awk '{printf $5}')
 
     if [[ "$sqm_use_overheads" == "true" ]]; then
         overhead="overhead 35 "
@@ -1272,10 +1264,10 @@ sqm_enable(){
     fi
 
     for i in $ifbe_ifaces; do
-        if [[ "$ifbe_ifaces" != "" ]]; then
-
+        if ! chk_qdisc $i; then
+			
             for a in $(echo $i | grep -i "$ifb_ifaces"); do
-                echo "Re-applying queue discipline to $i (ifb interface)"
+                ifnq echo "Applying queue discipline to $i (ifb interface)"
                 # Fix qdisc sometimes disappearing on network changes
                 tc qdisc del dev $a root 2>/dev/null
 
@@ -1314,11 +1306,12 @@ sqm_enable(){
             extra_arg=""
         fi
 
-        if [[ "$pppe_ifaces" != "" ]]; then
+        if ! chk_qdisc $i; then
+
             for a in $(echo $i | grep -i "$ppp_ifaces"); do
 
                 # Fix qdisc sometimes disappearing on network changes
-                echo "Re-applying queue discipline to $i (ppp interface)"
+                ifnq echo "Applying queue discipline to $i (ppp interface)"
                 tc qdisc del dev $a root 2>/dev/null
 
                 if [[ "$sqm_inet_upload" != "" ]]; then
@@ -1341,11 +1334,9 @@ sqm_enable(){
 
     for i in $ethernet_ifaces; do
 
-        e_check=$(tc qdisc | grep -iF $i | grep -iF cake)
+        if ! chk_qdisc $i ; then
 
-        if [[ "$e_check" = "" ]]; then
-
-            echo "Applying queue discipline to $i (ethernet interface)"
+            ifnq echo "Applying queue discipline to $i (ethernet interface)"
 
             if [[ "$sqm_enable_ifb_on_ethernet" == "true" ]]; then
 
@@ -1386,8 +1377,10 @@ sqm_enable(){
                     tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
                 fi
             else
+            
                 tc qdisc del dev $i root 2>/dev/null
                 tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
+
             fi
         fi
     done
@@ -1400,10 +1393,9 @@ sqm_enable(){
 
     for i in $wifi_ifaces; do
 
-        i_check=$(tc qdisc | grep -i $i | grep -i cake)
+        if ! chk_qdisc $i ; then
 
-        if [[ "$i_check" = "" ]]; then
-            echo "Applying queue discipline to $i (wireless interface)"
+            ifnq echo "Applying queue discipline to $i (wireless interface)"
             tc qdisc del dev $i root 2>/dev/null
             if [[ "$sqm_wifi_wash" == "true" ]]; then
                 tc qdisc add dev $i root cake wash besteffort ${overhead}split-gso rtt 50ms
@@ -1423,12 +1415,12 @@ sqm_enable(){
 
     for i in $vir_ifaces; do
 
-        i_check=$(tc qdisc | grep -i $i | grep -i cake)
-
-        if [[ "$i_check" = "" ]]; then
-            echo "Applying queue discipline to $i (virtual interface)"
+        if ! chk_qdisc $i ; then
+        
+            ifnq echo "Applying queue discipline to $i (virtual interface)"
             tc qdisc del dev $i root 2>/dev/null
             tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 10ms $extra_arg
+
         fi
 
     done
@@ -1441,15 +1433,25 @@ sqm_enable(){
 
     for i in $tun_ifaces; do
 
-        i_check=$(tc qdisc | grep -i $i | grep -i cake)
+        if ! chk_qdisc $i ; then
 
-        if [[ "$i_check" = "" ]]; then
-            echo "Applying queue discipline to $i (tunnel interface)"
+            ifnq echo "Applying queue discipline to $i (tunnel interface)"
             tc qdisc del dev $i root 2>/dev/null
             tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 300ms $extra_arg
+
         fi
 
     done
+
+	for i in $ifaces; do
+
+		if ! chk_qdisc $i; then
+			ifnq echo "Applying queue discipline to $i (generic interface)"
+			tc qdisc del dev $i root
+			tc qdisc add dev $i root cake
+		fi
+
+	done
 
     # Show qdisc info if verbose
     ifv tc qdisc
@@ -1467,19 +1469,23 @@ sqm_enable(){
 
         if [[ $(sysctl net.ipv4.tcp_congestion_control | grep -i bbr | wc -l) -eq 0 ]]; then
 
+            modprobe tcp_bbr 2>/dev/null
+            modprobe tcp_bbr2 2>/dev/null
+
             if [[ "$(sysctl net.ipv4.tcp_allowed_congestion_control | grep -iF bbr2 | wc -l)" -gt 0 ]]; then
-                modprobe tcp_bbr2 2>/dev/null
-                echo "Enabled BBRv2 congestion control."
+                ifnq echo "Enabling BBRv2 congestion control"
                 sysctl net.ipv4.tcp_congestion_control=bbr2
+                return 0
             elif [[ "$(sysctl net.ipv4.tcp_allowed_congestion_control | grep -iF bbr | wc -l)" -gt 0 ]]; then
-                modprobe tcp_bbr 2>/dev/null
-                echo "Enabled BBRv1 congestion control."
+                ifnq echo "Enabling BBRv1 congestion control"
                 sysctl net.ipv4.tcp_congestion_control=bbr
+                return 0
             else
-                echo "Your kernel does not support either BBRv1 or BBRv2, or the modules aren't loaded. Keeping default congestion control."
+                ifv echo "Your kernel does not support either BBRv1 or BBRv2, or the modules aren't loaded. Keeping default congestion control."
             fi
         fi
     fi
+
 
 }
 
@@ -1498,20 +1504,20 @@ ath9k_recalibrate(){
         load_prefs_iface $i
         ledctl periodic
         ledctl mklock 3
-        echo "Recalibrating special ath9k features on $i:"
+        ifnq echo "Recalibrating special ath9k features on $i:"
 
         if [[ "$wifi_ani" == "true" ]]; then
             ani_off $i
             sleep 3
             ani_on $i
-            echo "Adaptive noise immunity recalibration: done"
+            ifnq echo "Adaptive noise immunity recalibration: done"
         fi
 
         if [[ "$wifi_paprd" == "true" ]]; then
             paprd_off $i
             sleep 3
             paprd_on $i
-            echo "Digital predistortion recalibration: done"
+            ifnq echo "Digital predistortion recalibration: done"
         fi
 
         ledctl rmlock 3
@@ -2000,7 +2006,7 @@ get_dns_status(){
     fi
 
     if [[ "$domain" == "" ]]; then
-        domain="google.com"
+        return 0
     fi
 
     rm /dev/shm/routertools.netrec.dns 2>/dev/null
@@ -2077,7 +2083,7 @@ get_inet_status(){
     local ip="$1"
 
     if [[ "$ip" == "" ]]; then
-        local ip="1.1.1.1"
+        return 0
     fi
 
     rm /dev/shm/routertools.netrec.inet 2>/dev/null
@@ -2149,7 +2155,7 @@ status_wifi(){
 
     for i in $ifaces; do
 
-        echo "Probing AP $i status..."
+        infq echo "Probing AP $i status..."
         local is_on=$(netstat -i | grep -c "$i")
         local is_ap=$(iw "$i" info | grep -i type | grep -ic 'AP')
         ledctl blink
@@ -2218,7 +2224,7 @@ info_internet(){
 check_internet(){
 
     checksu || crit_error "You must be root to do this!"
-    echo "Probing internet status..."
+    ifnq echo "Probing internet status..."
 
     local bad_dns_1=0
     local bad_dns_2=0
@@ -2349,8 +2355,8 @@ import_addresses(){
     # Default addresses
     addr_dns_1="google-public-dns-a.google.com"
     addr_dns_2="a.root-servers.org"
-    addr_dns_3="www.tp-link.com"
-    addr_dns_4="github.com"
+    #addr_dns_3="www.tp-link.com"
+    #addr_dns_4="github.com"
     addr_inet_1="1.1.1.1"
     addr_inet_2="8.8.8.8"
 
@@ -2514,9 +2520,12 @@ sysctl_install(){
 status_internet(){
 
     local bad=0
+
+    import_addresses
+
     get_inet_iface_status || bad=1
-    get_inet_status || bad=1
-    get_dns_status google-public-dns-b.google.com || bad=1
+    get_inet_status "$addr_inet_1" || bad=1
+    get_dns_status "$addr_dns_1" || bad=1
 
     if [[ $bad -eq 1 ]]; then
         echo "Internet appears to be down."
@@ -2585,7 +2594,7 @@ restart_inet(){
 
     echo "Using user scripts to restart internet access"
     stop_internet
-    start_inetnet
+    start_internet
 
 }
 
@@ -2659,6 +2668,13 @@ daemon_inet(){
         daemon_manage_inet_every=30
     fi
 
+	start-internet &
+	sleep $daemon_manage_inet_every &
+    sleep_pid=$!
+	wait $sleep_pid 2>/dev/null
+	kill -9 $sleep_pid 2>/dev/null
+    [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+	
     while true; do
 
         # Wait a grace period while internet is initializing so we don't make a mistake
@@ -2706,7 +2722,7 @@ daemon_wifi_recalibration(){
         kill -9 $sleep_pid 2>/dev/null
 
         if get_hostapd_status $current_iface; then
-            echo "Automatic ath9k recalibration ($current_iface) in progress..."
+            ifnq echo "Automatic ath9k recalibration ($current_iface) in progress..."
             ath9k_recalibrate $current_iface
         fi
 
@@ -2729,8 +2745,6 @@ daemon_wifi(){
     export daemon_pid=$BASHPID
     export daemon_child_pid=""
     export child_recalib_pid=""
-    GRACE_PERIOD=0
-    CLEAR=1
     export IS_DAEMON=1
     is_child=0
 
@@ -2749,7 +2763,7 @@ daemon_wifi(){
     # periodic ath9k-recalibrate
     if [[ $daemon_ath9k_recalibrate_every -gt 0 ]]; then
         if [[ $(echo "$wifi_drivers" | grep -c "ath9k") -gt 0 ]]; then
-            echo "ath9k recalibration: enabled on $current_iface every $daemon_ath9k_recalibrate_every seconds"
+            ifnq echo "ath9k recalibration: enabled on $current_iface every $daemon_ath9k_recalibrate_every seconds"
             daemon_wifi_recalibration &
             child_recalib_pid=$!
             export child_recalib_pid=$child_recalib_pid
@@ -2758,55 +2772,29 @@ daemon_wifi(){
 
     while true; do
 
-        if ps -p $daemon_child_pid > /dev/null 2>&1; then
-            if [[ $GRACE_PERIOD_BLOCK -eq 1 ]]; then
-                GRACE_PERIOD=0
-            else
-                GRACE_PERIOD=1
-            fi
-        else
-            GRACE_PERIOD=0
-        fi
-
-        if [[ $GRACE_PERIOD -eq 1 ]]; then
-            GRACE_PERIOD=0
-            GRACE_PERIOD_BLOCK=1
-        else
-            # Wait a grace period to allow hostapd to finish initializing so we don't make a mistake
-            if [[ $require_internet == true ]] && [[ $daemon_wifi_wait_for_internet_timeout -eq $daemon_wifi_wait_for_internet_timeout ]]; then
+            if [[ "$require_internet" == "true" ]]; then
                 if check_inet_short; then
                     CLEAR=1
                 else
                     CLEAR=0
-                    GRACE_PERIOD=0
-                    GRACE_PERIOD_BLOCK=1
                 fi
+            else
+            	CLEAR=1
             fi
 
-            if [[ $CLEAR -ne 0 ]]; then
-
-                if [[ $require_internet == true ]]; then
-                    if [[ $SECONDS -gt $daemon_wifi_wait_for_internet_timeout ]]; then
-                        check_ap "$1" &
-                        daemon_child_pid=$!
-                    else
-                        if check_inet_short; then
-                            check_ap "$1" &
-                            daemon_child_pid=$!
-                        else
-                            echo "Internet connection unavailable for now"
-                        fi
-                    fi
-                else
+            if [[ $CLEAR -eq 1 ]]; then
+           		check_ap "$1" &
+            	daemon_child_pid=$!
+				export daemon_child_pid=$daemon_child_pid
+                [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+			else
+          	    if [[ $SECONDS -gt $daemon_wifi_wait_for_internet_timeout ]]; then
                     check_ap "$1" &
                     daemon_child_pid=$!
-                fi
-
-                export daemon_child_pid=$daemon_child_pid
-                GRACE_PERIOD_BLOCK=0
-                [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+					export daemon_child_pid=$daemon_child_pid
+		            [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+              	fi
             fi
-        fi
 
         # Don't block signals on sleep
         sleep $daemon_manage_wifi_every &
@@ -3211,12 +3199,6 @@ parse_cmdline(){
 
             show-routes) show_routes "$2"
                 shift ;;
-
-            sniff) sniff "$2"
-                _exit ;;
-
-            sniff-verbose) sniff_verbose=1 sniff "$2"
-                _exit ;;
 
             try-resolve) quiet=1 try_resolve "$2"
                 exit $? ;;

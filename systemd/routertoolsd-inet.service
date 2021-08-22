@@ -1,12 +1,12 @@
 [Unit]
-Description=x86routertools internet watchdog
+Description=Routertools networking daemon
 StartLimitBurst=5
 
 [Service]
 Restart=on-failure
-RestartSec=5s
-ExecStart=/usr/bin/routertools --daemon-inet
+RestartSec=1s
+ExecStart=/bin/sh /usr/bin/routertools -q --daemon-inet
 LimitNPROC=64
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=basic.target network.target

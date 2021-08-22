@@ -1151,8 +1151,8 @@ sqm_disable(){
 
 chk_qdisc(){
 
-	[[ $(tc qdisc show dev "$1" root | grep -ic "cake") -gt 0 ]] && return 0
-	return 1
+    [[ $(tc qdisc show dev "$1" root | grep -ic "cake") -gt 0 ]] && return 0
+    return 1
 
 }
 
@@ -1163,13 +1163,13 @@ sqm_enable(){
 
     # Group interfaces into categories
     local new_ifaces=$(ifconfig | grep -i 'flags=' | grep -v 'lo' | grep -v 'loopback' |  sed 's/:.*//')
-	local ifaces=""
-	NEWLINE=$'\n'
+    local ifaces=""
+    NEWLINE=$'\n'
 
-	for i in $new_ifaces; do
-		chk_qdisc $i || ifaces="${ifaces}$NEWLINE${i}"
-	done
-	
+    for i in $new_ifaces; do
+        chk_qdisc $i || ifaces="${ifaces}$NEWLINE${i}"
+    done
+
     local ethernet_ifaces=$(echo -e "$ifaces" | grep -E 'enp|ens|eth')
     local wifi_ifaces=$(echo -e "$ifaces" | grep -E 'wlp|wifi|wlan')
     local vir_ifaces=$(echo -e "$ifaces" | grep -E 'vnet|team|vlan|br|virt')
@@ -1205,7 +1205,7 @@ sqm_enable(){
         diffserv="diffserv4 "
 
     fi
-	
+
     # Apply qdisc in categories
     for i in $ppp_ifaces; do
 
@@ -1265,7 +1265,7 @@ sqm_enable(){
 
     for i in $ifbe_ifaces; do
         if ! chk_qdisc $i; then
-			
+
             for a in $(echo $i | grep -i "$ifb_ifaces"); do
                 ifnq echo "Applying queue discipline to $i (ifb interface)"
                 # Fix qdisc sometimes disappearing on network changes
@@ -1377,7 +1377,7 @@ sqm_enable(){
                     tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
                 fi
             else
-            
+
                 tc qdisc del dev $i root 2>/dev/null
                 tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
 
@@ -1416,7 +1416,7 @@ sqm_enable(){
     for i in $vir_ifaces; do
 
         if ! chk_qdisc $i ; then
-        
+
             ifnq echo "Applying queue discipline to $i (virtual interface)"
             tc qdisc del dev $i root 2>/dev/null
             tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso rtt 10ms $extra_arg
@@ -1443,15 +1443,15 @@ sqm_enable(){
 
     done
 
-	for i in $ifaces; do
+    for i in $ifaces; do
 
-		if ! chk_qdisc $i; then
-			ifnq echo "Applying queue discipline to $i (generic interface)"
-			tc qdisc del dev $i root
-			tc qdisc add dev $i root cake
-		fi
+        if ! chk_qdisc $i; then
+            ifnq echo "Applying queue discipline to $i (generic interface)"
+            tc qdisc del dev $i root
+            tc qdisc add dev $i root cake
+        fi
 
-	done
+    done
 
     # Show qdisc info if verbose
     ifv tc qdisc
@@ -2668,13 +2668,13 @@ daemon_inet(){
         daemon_manage_inet_every=30
     fi
 
-	start-internet &
-	sleep $daemon_manage_inet_every &
+    start-internet &
+    sleep $daemon_manage_inet_every &
     sleep_pid=$!
-	wait $sleep_pid 2>/dev/null
-	kill -9 $sleep_pid 2>/dev/null
+    wait $sleep_pid 2>/dev/null
+    kill -9 $sleep_pid 2>/dev/null
     [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
-	
+
     while true; do
 
         # Wait a grace period while internet is initializing so we don't make a mistake
@@ -2772,29 +2772,29 @@ daemon_wifi(){
 
     while true; do
 
-            if [[ "$require_internet" == "true" ]]; then
-                if check_inet_short; then
-                    CLEAR=1
-                else
-                    CLEAR=0
-                fi
+        if [[ "$require_internet" == "true" ]]; then
+            if check_inet_short; then
+                CLEAR=1
             else
-            	CLEAR=1
+                CLEAR=0
             fi
+        else
+            CLEAR=1
+        fi
 
-            if [[ $CLEAR -eq 1 ]]; then
-           		check_ap "$1" &
-            	daemon_child_pid=$!
-				export daemon_child_pid=$daemon_child_pid
+        if [[ $CLEAR -eq 1 ]]; then
+            check_ap "$1" &
+            daemon_child_pid=$!
+            export daemon_child_pid=$daemon_child_pid
+            [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
+        else
+            if [[ $SECONDS -gt $daemon_wifi_wait_for_internet_timeout ]]; then
+                check_ap "$1" &
+                daemon_child_pid=$!
+                export daemon_child_pid=$daemon_child_pid
                 [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
-			else
-          	    if [[ $SECONDS -gt $daemon_wifi_wait_for_internet_timeout ]]; then
-                    check_ap "$1" &
-                    daemon_child_pid=$!
-					export daemon_child_pid=$daemon_child_pid
-		            [[ "$enable_cake_sqm" == "true" ]] && sqm_enable
-              	fi
             fi
+        fi
 
         # Don't block signals on sleep
         sleep $daemon_manage_wifi_every &

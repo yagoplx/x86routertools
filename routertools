@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="2.0.1"
+version="2.0.1a"
 error_count=0
 crit_count=0
 crit_add=0
@@ -2426,6 +2426,7 @@ restart_services(){
 
     checksu || crit_error "You must be root to restart services!"
     echo "Restarting important services"
+    local i
     for i in $important_services; do
         echo "Restarting service $i"
         systemctl restart "$i" || error "Service $i failed to start"

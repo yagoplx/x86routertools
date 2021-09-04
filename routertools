@@ -1128,7 +1128,7 @@ sqm_disable(){
 
     for i in $ifaces; do
         tc qdisc del dev $i root 2>/dev/null
-		tc qdisc del dev $i handle ffff: ingress 2>/dev/null
+        tc qdisc del dev $i handle ffff: ingress 2>/dev/null
         # FQ-CoDel is a safe alternative
         # if this fails system default (probably none) will stay
         tc qdisc add dev $i root fq_codel 2>/dev/null
@@ -1197,7 +1197,7 @@ sqm_enable(){
 
     # Apply qdisc in categories
     for i in $ppp_ifaces; do
-            ifnq echo "Applying queue discipline to $i (ethernet interface)"
+        ifnq echo "Applying queue discipline to $i (ethernet interface)"
 
         restore_extra_arg=${extra_arg}
 
@@ -1218,7 +1218,7 @@ sqm_enable(){
                 tc qdisc add dev $i root cake ${diffserv}nat ${overhead}$extra_arg
                 ifnq echo "Applying queue discipline to $i (ppp interface)"
             fi
-			
+
             ip link add name ifb$i type ifb 2>/dev/null
             tc qdisc del dev $i ingress 2>/dev/null
             tc qdisc add dev $i handle ffff: ingress 2>/dev/null
@@ -1230,11 +1230,11 @@ sqm_enable(){
                 overhead=""
             fi
 
-			if [[ "$sqm_wash_markings" == "true" ]]; then
-				wash="wash"
-				else
-				wash=""
-			fi
+            if [[ "$sqm_wash_markings" == "true" ]]; then
+                wash="wash"
+            else
+                wash=""
+            fi
 
             if [[ "$sqm_inet_download" != "" ]]; then
                 tc qdisc add dev ifb$i root cake ${diffserv}nat $wash bandwidth "$sqm_inet_download"mbit ${overhead}split-gso $extra_arg
@@ -1263,52 +1263,52 @@ sqm_enable(){
 
         if ! chk_qdisc $i ; then
 
-       if [[ "$sqm_enable_ifb_on_ethernet" == "true" ]]; then
+            if [[ "$sqm_enable_ifb_on_ethernet" == "true" ]]; then
 
-        restore_extra_arg=${extra_arg}
+                restore_extra_arg=${extra_arg}
 
-        ifb_check=$(tc qdisc | grep "ingress" | grep "$i");
+                ifb_check=$(tc qdisc | grep "ingress" | grep "$i");
 
-        if [[ "$ifb_check" = "" ]]; then
+                if [[ "$ifb_check" = "" ]]; then
 
-            tc qdisc del dev $i root 2>/dev/null
+                    tc qdisc del dev $i root 2>/dev/null
 
-            if [[ "$sqm_inet_upload" != "" ]]; then
-                tc qdisc add dev $i root cake ${diffserv}nat ${overhead}bandwidth "$sqm_inet_upload"mbit $extra_arg
+                    if [[ "$sqm_inet_upload" != "" ]]; then
+                        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}bandwidth "$sqm_inet_upload"mbit $extra_arg
+                        ifnq echo "Applying queue discipline to $i (ethernet interface)"
+                    else
+                        tc qdisc add dev $i root cake ${diffserv}nat ${overhead}$extra_arg
+                        ifnq echo "Applying queue discipline to $i (ethernet interface)"
+                    fi
+
+                    ip link add name ifb$i type ifb 2>/dev/null
+                    tc qdisc del dev $i ingress 2>/dev/null
+                    tc qdisc add dev $i handle ffff: ingress 2>/dev/null
+                    tc qdisc del dev ifb$i root 2>/dev/null
+
+                    if [[ "$sqm_wash_markings" == "true" ]]; then
+                        wash="wash"
+                    else
+                        wash=""
+                    fi
+
+                    if [[ "$sqm_inet_download" != "" ]]; then
+                        tc qdisc add dev ifb$i root cake ${diffserv}nat $wash bandwidth "$sqm_inet_download"mbit ${overhead}split-gso $extra_arg
+                        ifnq echo "Applying queue discipline to ifb$i (ifb interface)"
+                    else
+                        tc qdisc add dev ifb$i root cake ${diffserv}nat $wash ${overhead}split-gso $extra_arg
+                        ifnq echo "Applying queue discipline to ifb$i (ifb interface)"
+                    fi
+
+                    ip link set ifb$i up
+                    tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
+
+                fi
+
+                extra_arg=${restore_extra_arg}
+
+            else
                 ifnq echo "Applying queue discipline to $i (ethernet interface)"
-            else
-                tc qdisc add dev $i root cake ${diffserv}nat ${overhead}$extra_arg
-                ifnq echo "Applying queue discipline to $i (ethernet interface)"
-            fi
-			
-            ip link add name ifb$i type ifb 2>/dev/null
-            tc qdisc del dev $i ingress 2>/dev/null
-            tc qdisc add dev $i handle ffff: ingress 2>/dev/null
-            tc qdisc del dev ifb$i root 2>/dev/null
-
-			if [[ "$sqm_wash_markings" == "true" ]]; then
-				wash="wash"
-				else
-				wash=""
-			fi
-
-            if [[ "$sqm_inet_download" != "" ]]; then
-                tc qdisc add dev ifb$i root cake ${diffserv}nat $wash bandwidth "$sqm_inet_download"mbit ${overhead}split-gso $extra_arg
-                ifnq echo "Applying queue discipline to ifb$i (ifb interface)"
-            else
-                tc qdisc add dev ifb$i root cake ${diffserv}nat $wash ${overhead}split-gso $extra_arg
-                ifnq echo "Applying queue discipline to ifb$i (ifb interface)"
-            fi
-
-            ip link set ifb$i up
-            tc filter add dev $i parent ffff: protocol all prio 10 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb$i
-
-        fi
-
-        extra_arg=${restore_extra_arg}
-		
-            else
-	            ifnq echo "Applying queue discipline to $i (ethernet interface)"
                 tc qdisc del dev $i root 2>/dev/null
                 tc qdisc add dev $i root cake ${diffserv}nat ${overhead}split-gso $extra_arg
 
@@ -1416,9 +1416,9 @@ sqm_enable(){
             fi
         fi
     else
- 		if [[ $(sysctl net.ipv4.tcp_congestion_control | grep -i bbr | wc -l) -gt 0 ]]; then
-                sysctl net.ipv4.tcp_congestion_control=cubic			
-		fi
+        if [[ $(sysctl net.ipv4.tcp_congestion_control | grep -i bbr | wc -l) -gt 0 ]]; then
+            sysctl net.ipv4.tcp_congestion_control=cubic
+        fi
     fi
 
 
@@ -1620,26 +1620,26 @@ ap_start(){
         ifv echo "storing hostapd pid in /dev/shm/hostapd_pid_$i"
         ifv echo "hostapd pid for $i -> $hostapd_pid"
 
-		if [[ "$hostapd_wait_for_secs" == "auto" ]]; then
-			# timeouts in a minute
-			half_seconds=0
-			
-			while [[ $half_seconds -lt 120 ]]; do
+        if [[ "$hostapd_wait_for_secs" == "auto" ]]; then
+            # timeouts in a minute
+            half_seconds=0
 
-				check_done=$(cat /var/log/hostapd_$i.log | grep -c "AP-ENABLED")
+            while [[ $half_seconds -lt 120 ]]; do
 
-				if [[ $check_done -gt 0 ]]; then
-					echo "hostapd is ready, waited $((half_seconds / 2)) seconds."
-					break
-				fi
+                check_done=$(cat /var/log/hostapd_$i.log | grep -c "AP-ENABLED")
 
-				sleep 0.5
-				half_seconds=$((half_seconds + 1))
-			done
-			
-		else
-        	echo "Waiting $hostapd_wait_for_secs seconds for hostapd to be ready (noauto)."
-        	sleep $hostapd_wait_for_secs
+                if [[ $check_done -gt 0 ]]; then
+                    echo "hostapd is ready, waited $((half_seconds / 2)) seconds."
+                    break
+                fi
+
+                sleep 0.5
+                half_seconds=$((half_seconds + 1))
+            done
+
+        else
+            echo "Waiting $hostapd_wait_for_secs seconds for hostapd to be ready (noauto)."
+            sleep $hostapd_wait_for_secs
         fi
 
         setup_ap_networking $i || error "An error occourred trying to set up AP networking."

@@ -2623,7 +2623,7 @@ daemon_inet(){
         daemon_manage_inet_every=30
     fi
 
-    start-internet &
+    start_internet &
     sleep $daemon_manage_inet_every &
     sleep_pid=$!
     wait $sleep_pid 2>/dev/null

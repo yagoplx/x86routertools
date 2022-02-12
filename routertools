@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #    x86routertools
-#    Copyright (C) 2021 Yago Mont' Alverne (yagocl@protonmail.ch)
+#    Copyright (C) 2022 Yago Mont' Alverne (yagocl@protonmail.ch)
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="2.0.2"
+version="2.1.0"
 error_count=0
 crit_count=0
 crit_add=0
@@ -58,7 +58,7 @@ Version(){
 
 Copyright(){
 
-    echo "Copyright (C) 2021 Yago Mont' Alverne"
+    echo "Copyright (C) 2022 Yago Mont' Alverne"
     Version
 
 }
@@ -66,42 +66,46 @@ Copyright(){
 # Descriptive help function
 Help(){
 
-    echo "Usage: x86routertools [arguments]"
+    echo "Usage: x86routertools [options]"
+    echo ""
+    echo " {}: optional argument, *: only works with Atheros cards"
+    echo "  @: add a 6 to the command for ipv6 (eg. ls -> ls6)"
     echo ""
     echo "  ROUTERTOOLS"
-    echo "  edit {AP/AP_hostapd}       opens editor on routertools config file."
-    echo "  status-internet, inet      checks if internet access is present and exits"
-    echo "  status-wifi, wifi {AP}     checks if the wifi AP(s) is/are up and running and exits"
-    echo "  status-services, srv       checks if important services are running and exits"
-    echo "  status, s                  shows a shortened version of all statuses"
-    echo "  ap-list, list-aps, la      shows a list of all AP names in routertools"
-    echo "  info-internet, iinet       shows information about the default route (internet)"
-    echo "  info-wifi, iwifi {AP}      shows information about the wifi APs"
-    echo "  info-services, isrv        shows all important services status verbosely"
-    echo "  info-qdisc, iqdisc         shows all configured queue disciplines"
-    echo "  info, i                    shows a shortened version of all information commands"
-    echo ""
-    echo "  INFORMATION"
-    echo "* display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution"
+    echo "@ ls                         shows connected ipv4 devices"
+    echo "@ all-addresses              shows assigned addresses"
+    echo "  addresses [INTERFACE]      shows all addresses and routes assigned to interface"
+    echo "  ports                      shows listening ports (TCP/UDP) on this machine"
+    echo "  interfaces                 shows all interfaces on this machine"
+    echo "@ routes                     shows routes on this machine"
+    echo "  accesspoints               shows a list of all AP names in routertools"
+    echo "  capabilities [AP] [MAC]    shows what capabilities the connected device has"
+    echo "  status-internet            checks if internet access is present and exits"
+    echo "  status-wifi                checks if the wifi AP(s) is/are up and running and exits"
+    echo "  status-services            checks if important services are running and exits"
+    echo "  status                     shows a shortened version of all statuses"
+    echo "  info-internet              shows information about the default route (internet)"
+    echo "  info-wifi {AP}             shows information about the wifi APs"
+    echo "  info-services              shows all important services status verbosely"
+    echo "  info-qdisc                 shows all configured queue disciplines"
+    echo "  info                       shows a shortened version of all information commands"
+    echo "  display-rates [AP] [MAC]   displays what data rates a device is using to communicate with the router, 100ms resolution"
     echo "* display-airtime [AP] [MAC] displays airtime usage for a given device, 100ms resolution"
     echo "* display-ani [AP]           displays runtime info about Adaptive Noise Immunity, 100ms resolution"
+    echo "  display-stats [AP] [MAC]   displays wireless link with device stats"
     echo "  display-local-network      displays all connected devices to this machine (ARP), 1s resolution"
     echo "  display-qdisc [INTERFACE]  displays queue discipline statistics for the given interface, 100ms resolution"
     echo "  display-interfaces         displays interface stats via netstat, 100ms resolution"
-    echo "  show-local-network, ls     shows all connected devices to this machine"
-    echo "  show-addresses [INTERFACE] shows addresses and routes assigned to interface"
-    echo "  show-ports                 shows listening ports (TCP/UDP) on this machine"
-    echo "  show-interfaces            shows all interfaces on this machine"
-    echo "  show-routes                shows all routes on this machine"
     echo "  try-resolve [DOMAIN]       checks if domain name is resolvable"
     echo "  try-reach [ADDRESS]        checks if domain/address is reachable via ping"
+    echo "  reset-config               resets x86routertools configuration files to default"
     echo ""
     echo "  CHECKS"
     echo "  check-internet             checks and runs start-internet if connection unavailable, also checks DNS"
     echo "  check-wifi {AP}            checks and restarts the wifi AP(s) if not started"
-    echo "  check, c                   checks both (all) wifi APs and internet, starts them automatically"
+    echo "  check                      checks both (all) wifi APs and internet, starts them automatically"
     echo ""
-    echo "  OPERATIONS"
+    echo "  ACTIONS"
     echo "  start-internet             runs the start-internet script"
     echo "  stop-internet              runs the stop-internet script"
     echo "  start-services             starts inactive important services"
@@ -112,44 +116,39 @@ Help(){
     echo "  restart-internet           restarts the internet connection via the user defined scripts"
     echo "  sysctl-install             installs optimized options to /etc/sysctl.d and reloads sysctl"
     echo ""
-    echo "  TOGGLEABLES "
-    echo "  qdisc-on, qdisc            apply routertools's per-category queue disciplines"
-    echo "  qdisc-off                  return queue disciplines to the system defaults"
-    echo "* paprd-on {AP}              enables digital predistortion on all APs or on {AP} only"
-    echo "* paprd-off {AP}             disables digital predistortion on all APs or on {AP} only"
-    echo "  dynack-on {AP}             enables ack timeout estimation on all APs or on {AP} only"
-    echo "  dynack-off {AP}            disables ack timeout estimation on all APs or on {AP} only"
-    echo "* ani-on {AP}                enables adaptive noise immunity on all APs or on {AP} only"
-    echo "* ani-off {AP}               disables adaptive noise immunity on all APs or on {AP} only"
-    echo "* lnamix-on {AP}             enables low noise amplifier signal mixing on all APs or on {AP} only"
-    echo "* lnamix-off {AP}            disables low noise amplifier signal mixing on all APs or on {AP} only"
-    echo "* ath9k-recalibrate {AP}     recalibrates paprd & ani on atheros cards, best used in a cron job"
-    echo "  frame-opt-on {AP}          enables custom framesize optimization on all APs or on {AP} only"
-    echo "  frame-opt-off {AP}         disables custom framesize optimization on all APs or on {AP} only"
-    echo "  powersave-on {AP}          enables power saving features on all APs or on {AP} only"
-    echo "  powersave-off {AP}         disables power saving features on all APs or on {AP} only"
-    echo ""
-    echo "  reset-config, reset-cfg    resets x86routertools configuration files to default"
+    echo "  TOGGLES"
+    echo "  qdisc                      apply routertools's per-category queue disciplines"
+    echo "  qdisc-off                  "
+    echo "* paprd-on {AP}              controls digital predistortion"
+    echo "* paprd-off {AP}             "
+    echo "  dynack-on {AP}             controls ack timeout estimation"
+    echo "  dynack-off {AP}            "
+    echo "* ani-on {AP}                controls adaptive noise immunity"
+    echo "* ani-off {AP}               "
+    echo "* lnamix-on {AP}             controls low noise amplifier"
+    echo "* lnamix-off {AP}            "
+    echo "* ath9k-recalibrate {AP}     turns toggled special features off and then back on"
+    echo "  frame-opt-on {AP}          controls custom framesize optimization"
+    echo "  frame-opt-off {AP}         "
+    echo "  powersave-on {AP}          controls power saving features"
+    echo "  powersave-off {AP}         "
     echo ""
     echo "  ROUTERTOOLS DAEMON"
-    echo "  --daemon [AP]              starts the check/watchdog daemon for the selected AP."
-    echo "  --daemon-stop [AP]         stops the check/watchdog daemon for the selected AP"
-    echo "  --daemon-inet              starts the check/watchdog daemon for the internet interface."
-    echo "  --daemon-stop-inet         stops the check/watchdog daemon for the internet interface"
+    echo "  --daemon [AP]              controls the watchdog daemon for the selected AP."
+    echo "  --daemon-stop [AP]         "
+    echo "  --daemon-inet              controls the watchdog daemon for the internet interface."
+    echo "  --daemon-stop-inet         "
     echo "  --daemon-reload            reloads configuration for active daemons without restarting them"
     echo "  --list-daemons             lists active daemons and PIDs"
     echo ""
     echo "  OPTIONS"
-    echo "  -h, --help                 show this help and quit"
-    echo "  -v, --version              show version info and quit"
-    echo "  -q, --quiet                silence some routertools dialog to make output better to parse"
+    echo "  -q, --quiet                silence some dialog"
     echo "  -V, --verbose              operate verbosely"
     echo "  -C, --noclear              never clear the screen"
-    echo "  -D, --detach               when combined with --daemon or --daemon-inet, runs these as detached processes."
-    echo "  -Z, --disown               disown all jobs on exit"
-    echo ""
-    echo "Note: Arguments preceded by an asterisk might not work outside of ath9k devices"
-    echo "Note: [] indicates a necessary argument. {} indicates an optional one."
+    echo "  -D, --detach               with, --daemon or --daemon-inet run as detached processes."
+    echo "  -Z, --disown               always disown all jobs"
+    echo "  -h, --help                 show help and quit"
+    echo "  -v, --version              show version and quit"
 
 }
 
@@ -343,8 +342,12 @@ initfs(){
         chmod go+r ${PREFIX}routertools.d/x86routertools.conf
 
 
+        echo "I am now going to download the most recent example configuration file for hostapd."
+        echo "Please press ENTER to continue."
+        read x
+        unset x
         echo "Downloading example hostapd.conf from w1.fi. Please wait..."
-        wget -q https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example configuration file."
+        wget -q https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf -O ${PREFIX}routertools.d/wifi-access-points/example_interface_hostapd.conf || error "Couldn't download example."
 
         # Populate files
         initfile ${PREFIX}routertools.d/scripts/start-internet
@@ -735,6 +738,35 @@ display_qdisc(){
 
 }
 
+display_stats(){
+
+    checksu || crit_error "You must be root to use debugfs."
+    local device_mac="$2"
+    local i="$1"
+    check_iface_exists $i || crit_error "Interface $i is not available"
+    getphy $i
+    check_mac_valid $device_mac || crit_error "Invalid MAC address: $device_mac"
+
+    watch -n 0.1 iw $i station get $device_mac
+}
+
+show_capabilities(){
+
+    checksu || crit_error "You must be root to use debugfs."
+    local device_mac="$2"
+    local i="$1"
+    check_iface_exists $i || crit_error "Interface $i is not available"
+    getphy $i
+    check_mac_valid $device_mac || crit_error "Invalid MAC address: $device_mac"
+    echo "Device flags:"
+    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/flags
+    echo ""
+    echo "Capabilities:"
+    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/ht_capa
+    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/vht_capa
+    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/he_capa
+
+}
 # Display a rapidly updating graph of data rate stats for a given MAC address and AP
 display_rates(){
 
@@ -770,12 +802,19 @@ display_local_network(){
 
 # Show all connected devices
 show_local_network(){
-    arp -ev
+    arp -av
+}
+
+show_local_network_6(){
+    ip -6 neigh
 }
 
 show_routes(){
-    netstat -rW
-    netstat -r6W
+    ip route
+}
+
+show_routes_6(){
+    ip -6 route
 }
 
 show_interfaces(){
@@ -786,14 +825,22 @@ show_ports(){
     netstat -tulpnW
 }
 
+show_all_addresses(){
+    ip addr
+}
+
+show_all_addresses_6(){
+    ip -6 addr
+}
+
 show_addresses(){
     local i="$1"
     [[ "$i" == "" ]] && crit_error "No argument given."
     check_iface_present "$i" || crit_error "The interface $i does not exist!"
     echo "IPv4 addresses on $i:"
-    ip addr $i | grep inet
+    ip addr show $i | grep inet
     echo "IPv6 addresses on $i:"
-    ip -6 addr $i | grep inet6
+    ip -6 addr show $i | grep inet6
 }
 
 display_interfaces(){
@@ -3020,7 +3067,7 @@ parse_cmdline(){
             check|c) check_all
                 shift ;;
 
-            list-aps|ap-list|la) get_wifi_iface_list
+            list-aps|ap-list|la|accesspoints) get_wifi_iface_list
                 shift ;;
 
             status-internet|inet|status-inet) status_internet
@@ -3128,6 +3175,12 @@ parse_cmdline(){
             display-rates|show-rates) display_rates "$2" "$3"
                 _exit ;;
 
+            display-stats|show-stats) display_stats "$2" "$3"
+                _exit ;;
+
+            capabilities|show-capab) show_capabilities "$2" "$3"
+                _exit ;;
+
             display-airtime|show-airtime) display_airtime "$2" "$3"
                 _exit ;;
 
@@ -3143,16 +3196,25 @@ parse_cmdline(){
             display-interfaces) display_interfaces
                 _exit ;;
 
-            show-addresses) show_addresses "$2"
+            addresses) show_addresses "$2"
                 shift ;;
 
-            show-interfaces) show_interfaces
+            all-addresses) show_all_addresses "$2"
                 shift ;;
 
-            show-ports) show_ports
+            all-addresses6) show_all_addresses_6 "$2"
                 shift ;;
 
-            show-routes) show_routes "$2"
+            interfaces) show_interfaces
+                shift ;;
+
+            ports) show_ports
+                shift ;;
+
+            routes|route) show_routes "$2"
+                shift ;;
+
+            routes6|route6) show_routes_6 "$2"
                 shift ;;
 
             try-resolve) quiet=1 try_resolve "$2"
@@ -3162,6 +3224,9 @@ parse_cmdline(){
                 exit $? ;;
 
             list-devices|ls|show-local-network) show_local_network
+                shift ;;
+
+            list-devices6|ls6|show-local-network6) show_local_network_6
                 shift ;;
 
             test-notify) rootnotify "$2"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #    x86routertools
-#    Copyright (C) 2022 Yago Mont' Alverne (yagocl@protonmail.ch)
+#    Copyright (C) 2022 yavincl (yagocl@protonmail.ch)
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ Version(){
 
 Copyright(){
 
-    echo "Copyright (C) 2022 Yago Mont' Alverne"
+    echo "Copyright (C) 2022 yavincl"
     Version
 
 }
@@ -588,7 +588,7 @@ initfs_daemon_cfg(){
     echo "# these options are only valid for the --daemon command" >> $f
     echo "" >> $f
     echo "# daemon_manage_inet_every -> a number in seconds. the internet watchdog will be executed every this amount of time." >> $f
-    echo "daemon_manage_inet_every=50" >> $f
+    echo "daemon_manage_inet_every=30" >> $f
     echo "" >> $f
     echo "# daemon_manage_wifi_every -> a number in seconds. the wifi watchdog will be executed every this amount of time." >> $f
     echo "daemon_manage_wifi_every=40" >> $f
@@ -601,7 +601,7 @@ initfs_daemon_cfg(){
     echo "# daemon_ath9k_recalibrate_every -> a number in seconds." >> $f
     echo "# if running the wifi daemon and wifi_driver for that interface includes ath9k, ath9k-recalibrate will be run every X seconds." >> $f
     echo "# recommended is hourly (3600). Set to 0 to disable." >> $f
-    echo "daemon_ath9k_recalibrate_every=3600" >> $f
+    echo "daemon_ath9k_recalibrate_every=0" >> $f
     echo "" >> $f
 
     unset f
@@ -764,7 +764,7 @@ show_capabilities(){
     echo "Capabilities:"
     cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/ht_capa
     cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/vht_capa
-    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/he_capa
+    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/he_capa 
 
 }
 # Display a rapidly updating graph of data rate stats for a given MAC address and AP
@@ -1376,9 +1376,9 @@ sqm_enable(){
             ifnq echo "Applying queue discipline to $i (wireless interface)"
             tc qdisc del dev $i root 2>/dev/null
             if [[ "$sqm_wifi_wash" == "true" ]]; then
-                tc qdisc add dev $i root cake wash besteffort ${overhead}split-gso nat rtt 50ms $extra_arg
+                tc qdisc add dev $i root cake wash besteffort ${overhead}split-gso nat rtt 150ms $extra_arg
             else
-                tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso nat rtt 50ms $extra_arg
+                tc qdisc add dev $i root cake ${diffserv}${overhead}split-gso nat rtt 150ms $extra_arg
             fi
         fi
 

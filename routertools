@@ -764,7 +764,7 @@ show_capabilities(){
     echo "Capabilities:"
     cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/ht_capa
     cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/vht_capa
-    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/he_capa 
+    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/he_capa
 
 }
 # Display a rapidly updating graph of data rate stats for a given MAC address and AP

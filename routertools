@@ -41,7 +41,7 @@ trap 'trap_ctl' SIGINT SIGTERM
 
 # Initialize variables and language setting for compatibility
 LANG=C
-version="2.1.0"
+version="2.2.0"
 error_count=0
 crit_count=0
 crit_add=0
@@ -764,7 +764,7 @@ show_capabilities(){
     echo "Capabilities:"
     cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/ht_capa
     cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/vht_capa
-    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/he_capa
+    cat /sys/kernel/debug/ieee80211/phy$phy/netdev:$i/stations/$device_mac/he_capa 
 
 }
 # Display a rapidly updating graph of data rate stats for a given MAC address and AP
@@ -1493,13 +1493,6 @@ ath9k_recalibrate(){
             sleep 3
             ani_on $i
             ifnq echo "Adaptive noise immunity recalibration: done"
-        fi
-
-        if [[ "$wifi_paprd" == "true" ]]; then
-            paprd_off $i
-            sleep 3
-            paprd_on $i
-            ifnq echo "Digital predistortion recalibration: done"
         fi
 
         ledctl rmlock 3
